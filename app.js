@@ -5,7 +5,7 @@ const AREAS = [
   {
     id: "running",
     name: "Running",
-    color: "#8fd4ff",
+    color: "#79b8ff",
     blurb: "Miles, minutes, and the days you got out.",
     fields: [
       { key: "miles", label: "Miles", type: "number", step: "0.1", unit: "mi" },
@@ -16,7 +16,7 @@ const AREAS = [
   {
     id: "gym",
     name: "Gym",
-    color: "#dff56a",
+    color: "#ff5c33",
     blurb: "Lifts, sessions, and what felt strong.",
     fields: [
       { key: "lift", label: "Lift", type: "text", placeholder: "Squat" },
@@ -28,7 +28,7 @@ const AREAS = [
   {
     id: "budget",
     name: "Budget",
-    color: "#ffc857",
+    color: "#e2b15a",
     blurb: "What came in and what went out.",
     fields: [
       { key: "kind", label: "Type", type: "select", options: ["Expense", "Income"] },
@@ -49,7 +49,7 @@ const AREAS = [
   {
     id: "sleep",
     name: "Sleep",
-    color: "#c4b5fd",
+    color: "#b0a7ff",
     blurb: "Hours and how the night felt.",
     fields: [
       { key: "hours", label: "Hours", type: "number", step: "0.1", unit: "h" },
@@ -60,7 +60,7 @@ const AREAS = [
   {
     id: "nutrition",
     name: "Nutrition",
-    color: "#ff8f9d",
+    color: "#73d6a0",
     blurb: "Meals, calories, and a note if you want one.",
     fields: [
       { key: "meal", label: "Meal", type: "text", placeholder: "Lunch" },
@@ -71,7 +71,7 @@ const AREAS = [
   {
     id: "other",
     name: "Other",
-    color: "#c5d0c6",
+    color: "#a0a6b0",
     blurb: "Anything else you want to keep.",
     fields: [
       { key: "label", label: "What", type: "text", placeholder: "Pages read" },
@@ -85,7 +85,18 @@ const AREAS = [
 const ICONS = {
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 19.2c1.4-2.6 3.6-3.7 6.5-3.7s5.1 1.1 6.5 3.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+  user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 19.2c1.4-2.6 3.6-3.7 6.5-3.7s5.1 1.1 6.5 3.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L19 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+
+const SPORT = {
+  running: "M4 16c2-6 4-6 6 0s4 6 6 0 4-6 4 0",
+  gym: "M3 9v6M7 7v10M17 7v10M21 9v6M7 12h10",
+  budget: "M12 4v16M16 7.5c0-1.5-1.6-2.5-4-2.5s-4 1-4 2.5 1.8 2.4 4 2.8 4 1.2 4 2.7-1.6 2.5-4 2.5-4-1-4-2.5",
+  sleep: "M16 4a7 7 0 1 0 4 12 8 8 0 1 1-4-12z",
+  nutrition: "M12 4c2 3 2 5 0 8-2-3-2-5 0-8zM8 13c0 4 1.8 7 4 7s4-3 4-7",
+  other: "M12 5v14M5 12h14"
 };
 
 let state = load();
@@ -102,7 +113,8 @@ function freshUi() {
     pendingDelete: "",
     confirmClear: false,
     shareUrl: "",
-    lightbox: ""
+    lightbox: "",
+    logOpen: false
   };
 }
 
@@ -371,6 +383,11 @@ function fieldInput(field, value = "") {
   return `<label class="field"><span>${esc(field.label)}</span><input name="${esc(field.key)}" id="${id}" type="${type}"${extra} placeholder="${esc(field.placeholder || "")}" value="${esc(value)}"></label>`;
 }
 
+function sportIcon(id) {
+  const path = SPORT[id] || SPORT.other;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
 function shareLink() {
   const url = new URL(location.href);
   url.hash = "";
@@ -380,12 +397,17 @@ function shareLink() {
 function render() {
   captureDraft();
   const view = route();
-  const glow = view.area?.color || "#dff56a";
+  const glow = view.area?.color || "#ff5c33";
   document.title = view.area ? `${view.area.name} · Goals` : "Goals";
   const body = !state.profile ? renderWelcome() : view.name === "area" ? renderArea(view.area) : view.name === "me" ? renderMe() : renderHome();
+  const showTabs = state.profile && (view.name === "home" || view.name === "me");
+  const showDock = state.profile && view.name === "area" && !ui.logOpen;
   document.getElementById("app").innerHTML = `
     ${state.profile ? topbar(view) : ""}
     <main>${body}</main>
+    ${showDock ? dock(view.area) : ""}
+    ${showTabs ? tabbar(view) : ""}
+    ${logSheet(view.area)}
     ${shareSheet()}
     ${lightbox()}
     <div id="toast" class="toast" hidden></div>
@@ -395,13 +417,19 @@ function render() {
 }
 
 function topbar(view) {
-  if (view.name === "home") {
-    return `<header class="topbar"><h1>Goals</h1>
-      <button class="icon-btn" type="button" data-action="share" aria-label="Share website link">${ICONS.share}</button>
-      <a class="icon-btn" href="#/me" aria-label="Your space">${ICONS.user}</a></header>`;
+  if (view.name === "area") {
+    return `<header class="topbar"><a class="back-link" href="#/" aria-label="Back">${ICONS.back}</a><h1>${esc(view.area.name)}</h1></header>`;
   }
-  const title = view.name === "me" ? "Your space" : view.area.name;
-  return `<header class="topbar"><a class="back-link" href="#/" aria-label="Back">${ICONS.back}</a><h1>${esc(title)}</h1></header>`;
+  return `<header class="topbar"><h1>${view.name === "me" ? "You" : "Goals"}</h1></header>`;
+}
+
+function tabbar(view) {
+  const tab = (href, label, icon, on) => `<a href="${href}"${on ? ' aria-current="page"' : ""}>${icon}<span>${label}</span></a>`;
+  return `<nav class="tabbar">${tab("#/", "Home", ICONS.home, view.name === "home")}${tab("#/me", "You", ICONS.user, view.name === "me")}</nav>`;
+}
+
+function dock(area) {
+  return `<div class="dock"><button class="btn full" type="button" data-action="open-log">Log ${esc(area.name)}</button></div>`;
 }
 
 function renderWelcome() {
@@ -417,61 +445,100 @@ function renderWelcome() {
   </section>`;
 }
 
+function rowStat(area) {
+  const stat = cardStat(area);
+  if (stat.hasGoal) return { value: stat.value, label: stat.label };
+  const [label, value] = snapshotBits(area)[0];
+  const empty = value === "$0" || /^(0|—)/.test(value);
+  return { value: empty ? "" : value, label: empty ? "Nothing logged" : label };
+}
+
 function renderHome() {
   const done = AREAS.filter((area) => checkedToday(area.id)).length;
   const streak = streakCount();
-  const chips = AREAS.map((area) => `<button class="chip" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${checkedToday(area.id)}" style="--area:${area.color}">${esc(area.name)}</button>`).join("");
-  const cards = AREAS.map((area) => {
-    const stat = cardStat(area);
-    const width = Math.round(stat.ratio * 100);
-    return `<a class="area-card" href="#/area/${area.id}" style="--area:${area.color}">
-      <header><span class="area-name">${esc(area.name)}</span><i class="dot"></i></header>
-      <div class="stat">${esc(stat.value)}</div>
-      <div class="fine">${esc(stat.label)}</div>
-      ${stat.hasGoal ? `<div class="bar${stat.over ? " over" : ""}"><i style="width:${width}%"></i></div>` : ""}
-    </a>`;
+  const rows = AREAS.map((area) => {
+    const stat = rowStat(area);
+    const on = checkedToday(area.id);
+    return `<div class="activity">
+      <a class="activity-main" href="#/area/${area.id}">
+        <span class="sport" style="--area:${area.color}">${sportIcon(area.id)}</span>
+        <span><span class="activity-name">${esc(area.name)}</span><span class="fine">${esc(stat.label)}</span></span>
+        <span class="activity-stat">${esc(stat.value)}</span>
+      </a>
+      <button class="check-dot" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${on}" aria-label="${on ? "Checked in" : "Check in"} ${esc(area.name)}">${on ? ICONS.check : ""}</button>
+    </div>`;
   }).join("");
   return `<p class="kicker">${esc(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}</p>
     <h2 class="hello">${esc(state.profile.name)}</h2>
-    <p class="lede">${streak ? `${streak} day streak` : "A private space on this phone"} · ${done} of ${AREAS.length} today</p>
-    <button class="btn full" type="button" data-action="share">Share the website link</button>
-    <p class="section-label">Today</p>
-    <div class="chips">${chips}</div>
-    <p class="section-label">Areas</p>
-    <div class="grid">${cards}</div>`;
+    <p class="lede">${done} of ${AREAS.length} today${streak ? ` · ${streak} day streak` : ""}</p>
+    <div class="activity-list">${rows}</div>`;
+}
+
+function heroFor(area) {
+  const goal = goalFor(area.id);
+  if (goal) {
+    const current = measure(goal);
+    return {
+      kicker: `${goal.title} · ${periodLabel(goal.period)}`,
+      value: formatNum(current, goal.unit),
+      detail: progressText(goal, current),
+      ratio: goal.target ? Math.min(current / goal.target, 1) : 0,
+      over: goal.direction === "cap" && current > goal.target,
+      showBar: true
+    };
+  }
+  const [label, value] = snapshotBits(area)[0];
+  return { kicker: label, value, detail: area.blurb, ratio: 0, over: false, showBar: false };
 }
 
 function renderArea(area) {
   const goal = goalFor(area.id);
+  const hero = heroFor(area);
   const snaps = snapshotBits(area).map(([label, value]) => `<div><span class="fine">${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
   const entries = entriesFor(area.id).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  const editing = entries.find((entry) => entry.id === ui.editingId);
-  const seed = editing ? { date: editing.date, note: editing.note || "", ...editing.fields } : { date: todayIso(), note: "" };
-  const draft = ui.draft && ui.draftArea === area.id ? { ...seed, ...ui.draft } : seed;
   const visible = entries.filter((entry) => !isBlank(entry));
-  const list = visible.length ? `<div class="entries">${visible.map(renderEntry).join("")}</div>` : `<p class="fine">Nothing logged yet.</p>`;
-  return `<p class="lede">${esc(area.blurb)}</p>
-    <div class="snap" style="--area:${area.color}">${snaps}</div>
-    ${renderGoal(area, goal)}
-    <button class="check" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${checkedToday(area.id)}" style="--area:${area.color}">${checkedToday(area.id) ? "Checked in today" : "Check in today"}</button>
-    <section class="panel">
-      <h2>${editing ? "Edit entry" : "Add an entry"}</h2>
-      <form id="entry-form" class="stack" data-area="${area.id}" autocomplete="off">
-        <label class="field"><span>Date</span><input type="date" name="date" max="${todayIso()}" value="${esc(draft.date || todayIso())}" required></label>
-        ${area.fields.map((field) => fieldInput(field, draft[field.key] ?? "")).join("")}
-        <label class="field"><span>Note</span><textarea name="note" maxlength="2000" placeholder="Optional">${esc(draft.note || "")}</textarea></label>
-        <label class="file-btn">Add a photo<input id="photo-input" type="file" accept="image/*"></label>
-        <div id="photo-preview" class="preview" hidden>
-          <img alt="Selected photo" id="photo-preview-img">
-          <button class="btn ghost" type="button" data-action="clear-photo">Remove photo</button>
-        </div>
-        <button class="btn full" type="submit">${editing ? "Save changes" : "Save entry"}</button>
-        ${editing ? `<button class="btn ghost full" type="button" data-action="cancel-edit">Cancel edit</button>` : ""}
-        <p class="fine">Saved on this phone. Photos are shrunk so a handful of them fit.</p>
-      </form>
+  const list = visible.length ? `<div class="feed">${visible.map(renderEntry).join("")}</div>` : `<p class="fine">Nothing logged yet. Use Log when you have a number, a note, or a photo.</p>`;
+  const on = checkedToday(area.id);
+  return `<section class="hero">
+      <p class="kicker">${esc(hero.kicker)}</p>
+      <p class="hero-stat">${esc(hero.value)}</p>
+      <p class="fine">${esc(hero.detail)}</p>
+      ${hero.showBar ? `<div class="bar${hero.over ? " over" : ""}" style="margin-top:12px"><i style="width:${Math.round(hero.ratio * 100)}%"></i></div>` : ""}
+      <button class="btn ghost" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${on}" style="margin-top:12px">${on ? "Checked in today" : "Check in today"}</button>
     </section>
+    <div class="snap">${snaps}</div>
+    ${renderGoal(area, goal)}
     <p class="section-label">Recent</p>
     ${list}`;
+}
+
+function entryForm(area) {
+  const editing = entriesFor(area.id).find((entry) => entry.id === ui.editingId);
+  const seed = editing ? { date: editing.date, note: editing.note || "", ...editing.fields } : { date: todayIso(), note: "" };
+  const draft = ui.draft && ui.draftArea === area.id ? { ...seed, ...ui.draft } : seed;
+  return `<form id="entry-form" class="stack" data-area="${area.id}" autocomplete="off">
+    <label class="field"><span>Date</span><input type="date" name="date" max="${todayIso()}" value="${esc(draft.date || todayIso())}" required></label>
+    ${area.fields.map((field) => fieldInput(field, draft[field.key] ?? "")).join("")}
+    <label class="field"><span>Note</span><textarea name="note" maxlength="2000" placeholder="How did it go?">${esc(draft.note || "")}</textarea></label>
+    <label class="file-btn">Add a photo<input id="photo-input" type="file" accept="image/*"></label>
+    <div id="photo-preview" class="preview" hidden>
+      <img alt="Selected photo" id="photo-preview-img">
+      <button class="btn ghost" type="button" data-action="clear-photo">Remove photo</button>
+    </div>
+    <button class="btn full" type="submit">${editing ? "Save changes" : "Save"}</button>
+    <p class="fine">Saved on this phone.</p>
+  </form>`;
+}
+
+function logSheet(area) {
+  if (!ui.logOpen || !area) return "";
+  return `<div class="sheet-back" data-action="close-log">
+    <section class="sheet" data-sheet data-action="hold" role="dialog" aria-label="${ui.editingId ? "Edit entry" : "Log"}">
+      <div class="sheet-grab"></div>
+      <h2 class="block-title">${ui.editingId ? "Edit" : "Log"} ${esc(area.name)}</h2>
+      ${entryForm(area)}
+    </section>
+  </div>`;
 }
 
 function renderGoal(area, goal) {
@@ -556,9 +623,10 @@ function renderEntry(entry) {
   const summary = summarize(area, entry.fields);
   const photo = safePhoto(entry.photo);
   const pending = ui.pendingDelete === entry.id;
-  return `<article class="entry">
-    <header><span class="fine">${esc(formatDay(entry.date))}</span><span class="fine">${entry.checked ? "Checked in" : ""}</span></header>
-    ${summary ? `<div class="summary">${esc(summary)}</div>` : ""}
+  return `<article class="feed-item">
+    <span class="fine">${esc(formatDay(entry.date))}</span>
+    <div>
+    ${summary ? `<div class="feed-title">${esc(summary)}</div>` : `<div class="feed-title">${entry.checked ? "Checked in" : "Note"}</div>`}
     ${entry.note ? `<p>${esc(entry.note)}</p>` : ""}
     ${photo ? `<button type="button" data-action="lightbox" data-photo="1" aria-label="View photo"><img class="thumb" alt="" src="${photo}"></button>` : ""}
     <div class="row-actions" style="margin-top:10px">
@@ -567,6 +635,7 @@ function renderEntry(entry) {
         ? `<button class="btn danger" type="button" data-action="confirm-delete" data-id="${esc(entry.id)}">Delete entry</button>
            <button class="btn ghost" type="button" data-action="cancel-delete">Keep</button>`
         : `<button class="btn ghost" type="button" data-action="ask-delete" data-id="${esc(entry.id)}">Delete</button>`}
+    </div>
     </div>
   </article>`;
 }
@@ -815,6 +884,7 @@ function saveEntry(area, form) {
   ui.draft = null;
   ui.photoDraft = "";
   ui.editingId = "";
+  ui.logOpen = false;
   render({ keepDraft: false });
   toast("Saved on this phone.");
 }
@@ -895,9 +965,24 @@ document.addEventListener("click", (event) => {
   const button = event.target.closest("[data-action]");
   if (!button) return;
   if (button.dataset.action === "close-lightbox" && event.target.tagName === "IMG") return;
+  if (button.dataset.action === "hold") return;
   const action = button.dataset.action;
   const areaId = button.dataset.area || route().area?.id;
 
+  if (action === "open-log") {
+    ui.logOpen = true;
+    ui.editingId = "";
+    ui.draft = null;
+    ui.photoDraft = "";
+    render({ keepDraft: false });
+  }
+  if (action === "close-log") {
+    ui.logOpen = false;
+    ui.editingId = "";
+    ui.draft = null;
+    ui.photoDraft = "";
+    render({ keepDraft: false });
+  }
   if (action === "toggle-today") toggleToday(areaId);
   if (action === "share") shareSite();
   if (action === "close-share") {
@@ -959,6 +1044,7 @@ document.addEventListener("click", (event) => {
     ui.draftArea = entry.area;
     ui.photoDraft = safePhoto(entry.photo);
     ui.pendingDelete = "";
+    ui.logOpen = true;
     render({ keepDraft: true, capture: false });
     document.getElementById("entry-form")?.scrollIntoView({ block: "start" });
   }
@@ -966,6 +1052,7 @@ document.addEventListener("click", (event) => {
     ui.editingId = "";
     ui.draft = null;
     ui.photoDraft = "";
+    ui.logOpen = false;
     render({ keepDraft: false });
   }
   if (action === "ask-delete") {
@@ -1062,6 +1149,7 @@ window.addEventListener("hashchange", () => {
   ui.pendingDelete = "";
   ui.shareUrl = "";
   ui.lightbox = "";
+  ui.logOpen = false;
   render({ keepDraft: false });
 });
 
