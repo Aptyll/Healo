@@ -17,12 +17,8 @@ const AREAS = [
     id: "gym",
     name: "Gym",
     color: "#ff5c33",
-    blurb: "Lifts, sessions, and what felt strong.",
-    fields: [
-      { key: "lift", label: "Lift", type: "text", placeholder: "Squat" },
-      { key: "weight", label: "Weight", type: "number", step: "0.5", unit: "lb" },
-      { key: "reps", label: "Reps", type: "number", step: "1", unit: "reps" }
-    ],
+    blurb: "One session: push, pull, or legs. Each lift is a few sets.",
+    fields: [],
     suggest: { title: "Sessions", target: 12, unit: "sessions", mode: "count", period: "month", direction: "up" }
   },
   {
@@ -114,7 +110,9 @@ function freshUi() {
     confirmClear: false,
     shareUrl: "",
     lightbox: "",
-    logOpen: false
+    logOpen: false,
+    gymSession: null,
+    keepGym: false
   };
 }
 
@@ -322,6 +320,7 @@ function cardStat(area) {
 }
 
 function isBlank(entry) {
+  if (entry.session?.lifts?.some((lift) => lift.name && lift.sets?.length)) return false;
   return !entry.note && !safePhoto(entry.photo) && !Object.values(entry.fields || {}).some((value) => String(value).trim());
 }
 
@@ -345,8 +344,10 @@ function snapshotBits(area) {
     return [["This month", formatNum(miles, "mi")], ["Runs", String(month.filter((entry) => numberFrom(entry, "miles")).length)]];
   }
   if (area.id === "gym") {
-    const month = list.filter((entry) => inPeriod(entry.date, "month") && entry.checked);
-    return [["Sessions", String(new Set(month.map((entry) => entry.date)).size)], ["Entries", String(list.length)]];
+    const logged = list.filter((entry) => entry.session?.lifts?.length);
+    const month = logged.filter((entry) => inPeriod(entry.date, "month"));
+    const last = [...logged].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+    return [["This month", String(month.length)], ["Last", last?.session?.day || "—"]];
   }
   if (area.id === "budget") {
     const month = list.filter((entry) => inPeriod(entry.date, "month"));
@@ -429,7 +430,8 @@ function tabbar(view) {
 }
 
 function dock(area) {
-  return `<div class="dock"><button class="btn full" type="button" data-action="open-log">Log ${esc(area.name)}</button></div>`;
+  const label = area.id === "gym" ? "Log session" : `Log ${area.name}`;
+  return `<div class="dock"><button class="btn full" type="button" data-action="open-log">${label}</button></div>`;
 }
 
 function renderWelcome() {
@@ -497,7 +499,7 @@ function renderArea(area) {
   const snaps = snapshotBits(area).map(([label, value]) => `<div><span class="fine">${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
   const entries = entriesFor(area.id).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   const visible = entries.filter((entry) => !isBlank(entry));
-  const list = visible.length ? `<div class="feed">${visible.map(renderEntry).join("")}</div>` : `<p class="fine">Nothing logged yet. Use Log when you have a number, a note, or a photo.</p>`;
+  const list = visible.length ? `<div class="feed">${visible.map(renderEntry).join("")}</div>` : `<p class="fine">${area.id === "gym" ? "Nothing logged yet. Log a push, pull, or legs session." : "Nothing logged yet. Use Log when you have a number, a note, or a photo."}</p>`;
   const on = checkedToday(area.id);
   return `<section class="hero">
       <p class="kicker">${esc(hero.kicker)}</p>
@@ -512,10 +514,119 @@ function renderArea(area) {
     ${list}`;
 }
 
+const GYM_DAYS = {
+  Push: ["Bench press", "Overhead press", "Incline press", "Dip", "Lateral raise"],
+  Pull: ["Pull-up", "Barbell row", "Lat pulldown", "Face pull", "Curl"],
+  Legs: ["Squat", "Romanian deadlift", "Leg press", "Lunge", "Calf raise"]
+};
+
+function blankSet() {
+  return { weight: "", reps: "" };
+}
+
+function blankLift(name = "") {
+  return { name, sets: [blankSet(), blankSet(), blankSet()] };
+}
+
+function blankSession() {
+  return { day: "Push", unit: "lb", lifts: [blankLift()] };
+}
+
+function cloneSession(session) {
+  return {
+    day: GYM_DAYS[session?.day] ? session.day : "Push",
+    unit: session?.unit === "kg" ? "kg" : "lb",
+    lifts: (session?.lifts || [blankLift()]).map((lift) => ({
+      name: lift.name || "",
+      sets: (lift.sets?.length ? lift.sets : [blankSet(), blankSet(), blankSet()]).map((set) => ({
+        weight: String(set.weight ?? ""),
+        reps: String(set.reps ?? "")
+      }))
+    }))
+  };
+}
+
+function readGymSession(form) {
+  if (!form) return cloneSession(ui.gymSession || blankSession());
+  const day = form.querySelector(".day-picks [aria-pressed='true']")?.dataset.day;
+  const unit = form.querySelector(".unit-picks [aria-pressed='true']")?.dataset.unit;
+  const lifts = [...form.querySelectorAll(".lift-card")].map((block) => ({
+    name: block.querySelector(".lift-name")?.value || "",
+    sets: [...block.querySelectorAll("[data-set]")].map((row) => ({
+      weight: row.querySelector(".set-weight")?.value || "",
+      reps: row.querySelector(".set-reps")?.value || ""
+    }))
+  }));
+  return cloneSession({ day, unit, lifts: lifts.length ? lifts : [blankLift()] });
+}
+
+function cleanSession(session) {
+  const next = cloneSession(session);
+  next.lifts = next.lifts.map((lift) => ({
+    name: lift.name.trim(),
+    sets: lift.sets.map((set) => ({ weight: set.weight.trim(), reps: set.reps.trim() })).filter((set) => set.weight || set.reps)
+  })).filter((lift) => lift.name && lift.sets.length);
+  return next;
+}
+
+function setText(set) {
+  if (set.weight && set.reps) return `${set.weight}×${set.reps}`;
+  if (set.weight) return `${set.weight}`;
+  return `${set.reps} reps`;
+}
+
+function gymMarkup(entry) {
+  const session = entry.session;
+  if (!session?.lifts?.length) return "";
+  const lifts = session.lifts.map((lift) => `<div class="logged-lift"><p class="lift-name-log">${esc(lift.name)}</p><p class="set-line">${lift.sets.map((set) => `<span>${esc(setText(set))}</span>`).join("")}</p></div>`).join("");
+  return `<p class="feed-title">${esc(session.day)}</p><p class="fine">${esc(session.unit || "lb")}</p>${lifts}`;
+}
+
+function gymForm(draft) {
+  const session = cloneSession(ui.gymSession || blankSession());
+  const days = Object.keys(GYM_DAYS).map((day) => `<button class="pick" type="button" data-action="set-day" data-day="${day}" aria-pressed="${session.day === day}">${day}</button>`).join("");
+  const units = ["lb", "kg"].map((unit) => `<button class="pick" type="button" data-action="set-unit" data-unit="${unit}" aria-pressed="${session.unit === unit}">${unit}</button>`).join("");
+  const ideas = GYM_DAYS[session.day].map((name) => `<button class="pick idea" type="button" data-action="add-named-lift" data-name="${esc(name)}">${esc(name)}</button>`).join("");
+  const lifts = session.lifts.map((lift, liftIndex) => {
+    const sets = lift.sets.map((set, setIndex) => `<div class="set-row" data-set>
+      <span class="set-num">${setIndex + 1}</span>
+      <input class="set-weight" type="number" inputmode="decimal" min="0" step="0.5" placeholder="Weight" aria-label="Set ${setIndex + 1} weight" value="${esc(set.weight)}">
+      <input class="set-reps" type="number" inputmode="numeric" min="0" step="1" placeholder="Reps" aria-label="Set ${setIndex + 1} reps" value="${esc(set.reps)}">
+      ${lift.sets.length > 1 ? `<button class="icon-x" type="button" data-action="remove-set" data-lift="${liftIndex}" data-set-index="${setIndex}" aria-label="Remove set ${setIndex + 1}">×</button>` : "<span></span>"}
+    </div>`).join("");
+    return `<section class="lift-card" data-lift>
+      <input class="lift-name" type="text" maxlength="40" placeholder="Lift name" aria-label="Lift name" value="${esc(lift.name)}">
+      <div class="set-head"><span></span><span>Weight</span><span>Reps</span><span></span></div>
+      ${sets}
+      <div class="row-actions">
+        <button class="btn ghost" type="button" data-action="add-set" data-lift="${liftIndex}">Add set</button>
+        ${session.lifts.length > 1 ? `<button class="btn ghost" type="button" data-action="remove-lift" data-lift="${liftIndex}">Remove lift</button>` : ""}
+      </div>
+    </section>`;
+  }).join("");
+  return `<form id="entry-form" class="stack" data-area="gym" autocomplete="off">
+    <label class="field"><span>Date</span><input type="date" name="date" max="${todayIso()}" value="${esc(draft.date || todayIso())}" required></label>
+    <div class="field"><span>Day</span><div class="day-picks">${days}</div></div>
+    <div class="field"><span>Weight</span><div class="day-picks unit-picks">${units}</div></div>
+    <div class="field"><span>Common lifts</span><div class="day-picks">${ideas}</div></div>
+    ${lifts}
+    <button class="btn secondary full" type="button" data-action="add-lift">Add another lift</button>
+    <label class="field"><span>Note</span><textarea name="note" maxlength="2000" placeholder="How did it feel?">${esc(draft.note || "")}</textarea></label>
+    <label class="file-btn">Add a photo<input id="photo-input" type="file" accept="image/*"></label>
+    <div id="photo-preview" class="preview" hidden>
+      <img alt="Selected photo" id="photo-preview-img">
+      <button class="btn ghost" type="button" data-action="clear-photo">Remove photo</button>
+    </div>
+    <button class="btn full" type="submit">${ui.editingId ? "Save session" : "Save session"}</button>
+    <p class="fine">Empty sets are left out. A normal lift here is 3 sets of 6–12 reps.</p>
+  </form>`;
+}
+
 function entryForm(area) {
   const editing = entriesFor(area.id).find((entry) => entry.id === ui.editingId);
   const seed = editing ? { date: editing.date, note: editing.note || "", ...editing.fields } : { date: todayIso(), note: "" };
   const draft = ui.draft && ui.draftArea === area.id ? { ...seed, ...ui.draft } : seed;
+  if (area.id === "gym") return gymForm(draft);
   return `<form id="entry-form" class="stack" data-area="${area.id}" autocomplete="off">
     <label class="field"><span>Date</span><input type="date" name="date" max="${todayIso()}" value="${esc(draft.date || todayIso())}" required></label>
     ${area.fields.map((field) => fieldInput(field, draft[field.key] ?? "")).join("")}
@@ -535,7 +646,7 @@ function logSheet(area) {
   return `<div class="sheet-back" data-action="close-log">
     <section class="sheet" data-sheet data-action="hold" role="dialog" aria-label="${ui.editingId ? "Edit entry" : "Log"}">
       <div class="sheet-grab"></div>
-      <h2 class="block-title">${ui.editingId ? "Edit" : "Log"} ${esc(area.name)}</h2>
+      <h2 class="block-title">${area.id === "gym" ? (ui.editingId ? "Edit session" : "Log session") : `${ui.editingId ? "Edit" : "Log"} ${esc(area.name)}`}</h2>
       ${entryForm(area)}
     </section>
   </div>`;
@@ -626,7 +737,7 @@ function renderEntry(entry) {
   return `<article class="feed-item">
     <span class="fine">${esc(formatDay(entry.date))}</span>
     <div>
-    ${summary ? `<div class="feed-title">${esc(summary)}</div>` : `<div class="feed-title">${entry.checked ? "Checked in" : "Note"}</div>`}
+    ${entry.area === "gym" && entry.session?.lifts?.length ? gymMarkup(entry) : (summary ? `<div class="feed-title">${esc(summary)}</div>` : `<div class="feed-title">${entry.checked ? "Checked in" : "Note"}</div>`)}
     ${entry.note ? `<p>${esc(entry.note)}</p>` : ""}
     ${photo ? `<button type="button" data-action="lightbox" data-photo="1" aria-label="View photo"><img class="thumb" alt="" src="${photo}"></button>` : ""}
     <div class="row-actions" style="margin-top:10px">
@@ -708,6 +819,8 @@ function captureDraft() {
   if (entryForm) {
     ui.draft = Object.fromEntries(new FormData(entryForm).entries());
     ui.draftArea = entryForm.dataset.area || "";
+    if (entryForm.dataset.area === "gym" && !ui.keepGym) ui.gymSession = readGymSession(entryForm);
+    ui.keepGym = false;
   }
   const goalFormEl = document.getElementById("goal-form");
   if (goalFormEl && !goalFormEl.hidden) {
@@ -833,23 +946,31 @@ function toggleToday(areaId) {
 
 function readEntry(area, form) {
   const data = Object.fromEntries(new FormData(form).entries());
-  const fields = {};
-  area.fields.forEach((field) => {
-    fields[field.key] = String(data[field.key] ?? "").trim();
-  });
   const note = String(data.note || "").trim();
   const date = data.date || todayIso();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayIso()) {
     toast("Choose today or an earlier date.");
     return null;
   }
+  if (area.id === "gym") {
+    const session = cleanSession(readGymSession(form));
+    if (!session.lifts.length && !note && !safePhoto(ui.photoDraft)) {
+      toast("Name a lift and add weight or reps for a set.");
+      return null;
+    }
+    return { date, note, fields: { day: session.day }, session };
+  }
+  const fields = {};
+  area.fields.forEach((field) => {
+    fields[field.key] = String(data[field.key] ?? "").trim();
+  });
   const hasNumber = area.fields.some((field) => field.type === "number" && fields[field.key] !== "");
   const hasText = area.fields.some((field) => field.type !== "number" && field.type !== "select" && fields[field.key] !== "");
   if (!note && !hasNumber && !hasText && !safePhoto(ui.photoDraft) && !ui.editingId) {
     toast("Add a number, a note, or a photo.");
     return null;
   }
-  return { date, note, fields };
+  return { date, note, fields, session: null };
 }
 
 function saveEntry(area, form) {
@@ -863,6 +984,7 @@ function saveEntry(area, form) {
         date: parsed.date,
         note: parsed.note,
         fields: parsed.fields,
+        session: parsed.session,
         photo,
         checked: true
       } : entry);
@@ -876,6 +998,7 @@ function saveEntry(area, form) {
       checked: true,
       note: parsed.note,
       fields: parsed.fields,
+      session: parsed.session,
       photo,
       createdAt: new Date().toISOString()
     });
@@ -885,6 +1008,7 @@ function saveEntry(area, form) {
   ui.photoDraft = "";
   ui.editingId = "";
   ui.logOpen = false;
+  ui.gymSession = null;
   render({ keepDraft: false });
   toast("Saved on this phone.");
 }
@@ -974,6 +1098,7 @@ document.addEventListener("click", (event) => {
     ui.editingId = "";
     ui.draft = null;
     ui.photoDraft = "";
+    ui.gymSession = null;
     render({ keepDraft: false });
   }
   if (action === "close-log") {
@@ -981,7 +1106,32 @@ document.addEventListener("click", (event) => {
     ui.editingId = "";
     ui.draft = null;
     ui.photoDraft = "";
+    ui.gymSession = null;
     render({ keepDraft: false });
+  }
+  if (action === "set-day" || action === "set-unit" || action === "add-set" || action === "remove-set" || action === "add-lift" || action === "remove-lift" || action === "add-named-lift") {
+    const session = readGymSession(document.getElementById("entry-form"));
+    const liftIndex = Number(button.dataset.lift);
+    if (action === "set-day") session.day = button.dataset.day;
+    if (action === "set-unit") session.unit = button.dataset.unit === "kg" ? "kg" : "lb";
+    if (action === "add-set") session.lifts[liftIndex]?.sets.push(blankSet());
+    if (action === "remove-set" && session.lifts[liftIndex]?.sets.length > 1) {
+      session.lifts[liftIndex].sets.splice(Number(button.dataset.setIndex), 1);
+    }
+    if (action === "add-lift") session.lifts.push(blankLift());
+    if (action === "remove-lift" && session.lifts.length > 1) session.lifts.splice(liftIndex, 1);
+    if (action === "add-named-lift") {
+      const name = button.dataset.name || "";
+      const exists = session.lifts.some((lift) => lift.name.trim().toLowerCase() === name.toLowerCase());
+      if (!exists) {
+        const empty = session.lifts.find((lift) => !lift.name.trim());
+        if (empty) empty.name = name;
+        else session.lifts.push(blankLift(name));
+      }
+    }
+    ui.gymSession = session;
+    ui.keepGym = true;
+    render({ keepDraft: true });
   }
   if (action === "toggle-today") toggleToday(areaId);
   if (action === "share") shareSite();
@@ -1045,6 +1195,7 @@ document.addEventListener("click", (event) => {
     ui.photoDraft = safePhoto(entry.photo);
     ui.pendingDelete = "";
     ui.logOpen = true;
+    ui.gymSession = entry.area === "gym" ? (entry.session?.lifts ? cloneSession(entry.session) : null) : null;
     render({ keepDraft: true, capture: false });
     document.getElementById("entry-form")?.scrollIntoView({ block: "start" });
   }
@@ -1053,6 +1204,7 @@ document.addEventListener("click", (event) => {
     ui.draft = null;
     ui.photoDraft = "";
     ui.logOpen = false;
+    ui.gymSession = null;
     render({ keepDraft: false });
   }
   if (action === "ask-delete") {
@@ -1150,6 +1302,7 @@ window.addEventListener("hashchange", () => {
   ui.shareUrl = "";
   ui.lightbox = "";
   ui.logOpen = false;
+  ui.gymSession = null;
   render({ keepDraft: false });
 });
 

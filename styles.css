@@ -397,7 +397,7 @@ main {
 
 label.field { display: grid; gap: 6px; }
 
-label.field span, .file-btn {
+label.field span, .field > span, .file-btn {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--muted);
@@ -709,6 +709,97 @@ input:focus, select:focus, textarea:focus {
   border-radius: 99px;
   background: rgba(255, 255, 255, 0.22);
   margin: 6px auto 14px;
+}
+
+.day-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pick {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #12161a;
+  color: var(--text);
+  font-weight: 650;
+}
+
+.pick[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--ink);
+  border-color: transparent;
+}
+
+.pick.idea {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.lift-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #12161a;
+}
+
+.lift-name {
+  font-weight: 650;
+}
+
+.set-head, .set-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+.set-row input {
+  min-width: 0;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.set-head {
+  color: var(--faint);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.set-num {
+  color: var(--muted);
+  font-weight: 650;
+  text-align: center;
+}
+
+.icon-x {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 1.3rem;
+}
+
+.logged-lift { margin-top: 8px; }
+
+.lift-name-log {
+  margin: 0;
+  font-weight: 650;
+}
+
+.set-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 :focus-visible {
