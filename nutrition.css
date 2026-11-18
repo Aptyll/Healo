@@ -1,0 +1,523 @@
+/* Nutrition: meals and grocery list. Everything is scoped under .nut. */
+
+.nut-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  margin: 2px 0 16px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.nut-tabs a {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 6px;
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.94rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.nut-tabs a[aria-current="page"] {
+  background: var(--area);
+  color: var(--ink);
+}
+
+.nut-tabs b {
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 99px;
+  font-size: 0.74rem;
+  text-align: center;
+  background: color-mix(in srgb, var(--area) 22%, transparent);
+  color: var(--area);
+}
+
+.nut-tabs a[aria-current="page"] b {
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--ink);
+}
+
+/* The Log button belongs to the Today tab only. */
+#app:has(.nut-sub) .dock { display: none; }
+
+.nut-title {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.nut-foot { margin: 16px 0 4px; }
+
+.nut-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+
+.nut-facts div {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.nut-facts strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 1.1rem;
+  letter-spacing: -0.03em;
+}
+
+.nut-ingredients {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+}
+
+.nut-ingredients li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.nut-ingredients li span:last-child {
+  flex: none;
+  text-align: right;
+}
+
+.nut-steps {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 12px;
+}
+
+.nut-steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 10px;
+  line-height: 1.45;
+}
+
+.nut-steps li::before {
+  content: counter(step);
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--area);
+  background: color-mix(in srgb, var(--area) 16%, var(--card));
+}
+
+.nut-tip {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border-left: 3px solid var(--area);
+  background: color-mix(in srgb, var(--area) 8%, var(--card));
+  line-height: 1.45;
+}
+
+.nut .btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.nut-add {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.nut-list {
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+
+.nut-item:last-child { border-bottom: 0; }
+
+
+.nut-box {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 2px solid var(--ring);
+  color: var(--ink);
+}
+
+.nut-box svg { width: 16px; height: 16px; }
+
+.nut-item.done .nut-box {
+  background: var(--area);
+  border-color: var(--area);
+}
+
+.nut-name {
+  font-size: 1.05rem;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+
+.nut-item.done .nut-name {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+
+.nut-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.nut-actions .btn { min-height: 44px; }
+
+.nut-empty {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.nut-empty h2 { margin: 0; }
+
+.nut-tips ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* Nutrition home: the three categories. */
+
+.nut-cats {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.nut-cat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--area);
+}
+
+.nut-cat:active { transform: scale(0.99); }
+
+.nut-cat-name {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.nut-cat-go {
+  font-size: 1.6rem;
+  color: var(--area);
+}
+
+/* Research */
+
+.nut-quiz {
+  display: grid;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.nut-q {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.nut-q:last-child { border-bottom: 0; }
+
+.nut-q p {
+  margin: 0 0 10px;
+  font-weight: 550;
+  line-height: 1.35;
+}
+
+.nut-answers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.nut-answers .pick[aria-pressed="true"] {
+  background: var(--area);
+  color: var(--ink);
+  border-color: transparent;
+}
+
+.nut-nutrients { display: grid; gap: 10px; }
+
+.nut-nutrient {
+  padding: 0 16px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.nut-nutrient[open] { padding-bottom: 16px; }
+
+.nut-nutrient summary {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.nut-nutrient summary::-webkit-details-marker { display: none; }
+
+.nut-flag {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+}
+
+.nut-flag.low {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+}
+
+.nut-flag.ok {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+}
+
+.nut-target {
+  margin: 0 0 6px;
+  font-weight: 650;
+  color: var(--area);
+}
+
+/* Shared names */
+
+.nut-meal-name {
+  font-size: 1.1rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.nut-chips { margin: 14px 0; }
+
+/* Cook: a row of meal cards, with the picked recipe beneath. */
+
+.nut-rail {
+  display: flex;
+  gap: 10px;
+  margin: 14px -16px 18px;
+  padding: 2px 16px 6px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding: 0 16px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nut-rail::-webkit-scrollbar { display: none; }
+
+.nut-card {
+  flex: none;
+  width: 148px;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  text-align: left;
+  border-radius: 20px;
+  background: var(--card);
+  border: 2px solid var(--line);
+  scroll-snap-align: start;
+}
+
+.nut-card[aria-pressed="true"] {
+  border-color: var(--area);
+  background: color-mix(in srgb, var(--area) 10%, var(--card));
+}
+
+.nut-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.nut-card-name {
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.nut-card-facts {
+  margin-top: auto;
+  color: var(--area);
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.nut-recipe-name {
+  margin: 0 0 4px;
+  font-size: 1.45rem;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.nut-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 14px 0 4px;
+}
+
+.nut-facts div { padding: 10px 8px; }
+
+.nut-facts strong { font-size: 1rem; }
+
+/* Order: priced list. */
+
+.nut-total {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--area) 9%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--area) 30%, transparent);
+}
+
+.nut-total strong {
+  display: block;
+  font-size: 1.6rem;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.nut-total p {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+}
+
+.nut-item { border-bottom: 1px solid var(--line); }
+
+.nut-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 10px;
+}
+
+.nut-check {
+  flex: 1;
+  min-width: 0;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px 8px 14px;
+  text-align: left;
+}
+
+.nut-check .nut-name,
+.nut-check .fine { display: block; }
+
+.nut-price {
+  flex: none;
+  min-width: 72px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--field);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.nut-price[aria-expanded="true"] { border-color: var(--area); }
+
+.nut-item.done .nut-price { opacity: 0.55; }
+
+.nut-edit {
+  display: grid;
+  gap: 12px;
+  padding: 4px 14px 16px;
+}
+
+.nut-air { border-left-color: var(--accent-text); }
+
+.nut-air strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--accent-text);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nut-rail { margin-top: 0; }
+
+.nut-good {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+
+.nut-good b {
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--area);
+  background: color-mix(in srgb, var(--area) 14%, transparent);
+}
+
+.nut-meal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 14px;
+}

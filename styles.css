@@ -1291,6 +1291,7 @@ input:focus, select:focus, textarea:focus {
 
 /* Cards: white, outlined, lifted off the page. */
 #app :is(.goal-card, .panel, .entry, .share-sheet, .welcome-card, .area-card, .snap div, .start-btn, .w-lift,
+         .home-card, .home-tile, .w-row,
          .nut-tabs, .nut-facts div, .nut-list, .nut-cat, .nut-quiz, .nut-nutrient, .nut-card, .nut-total) {
   border: var(--edge);
   border-radius: var(--r-card);
@@ -1348,62 +1349,23 @@ input:focus, select:focus, textarea:focus {
 #app .topbar h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.04em; }
 
 /* Headings. */
-#app :is(.hello, .hero-stat) { font-weight: 700; letter-spacing: -0.04em; }
+#app .hero-stat { font-weight: 700; letter-spacing: -0.04em; }
 #app :is(h2, .block-title) { font-weight: 700; }
 #app :is(.goal-card, .panel) h2 { font-size: 1.2rem; }
 #app .section-label { color: var(--accent-text); font-weight: 700; letter-spacing: 0.08em; }
 #app .mark { border: var(--edge); box-shadow: var(--lift-sm); }
 
-/* Home greeting: big name with a light blue highlighter stripe, and a status tag. */
-#app .hello {
-  display: inline-block;
-  font-size: 3rem;
-  line-height: 1;
-  padding: 0 6px;
-  margin: 0 0 12px -6px;
-  background: linear-gradient(transparent 52%, var(--tint) 52%, var(--tint) 92%, transparent 92%);
-}
-#app .hello + .lede {
-  display: table;
-  padding: 5px 12px;
-  border: var(--edge);
-  border-radius: 99px;
-  background: var(--card);
-  color: var(--text);
-  font-weight: 700;
-  font-size: 0.92rem;
-  box-shadow: var(--lift-sm);
-}
+/* Home: big cards for Gym and Nutrition, small tiles for the rest. */
+#app .home-big { font-size: 1.8rem; font-weight: 700; }
+#app .home-card-name { color: var(--text); font-weight: 700; }
+#app :is(.home-chev, .w-chev) { color: var(--accent); }
 
-/* Home rows are cards with a blue icon strip down the side. */
-#app .activity-list { display: grid; gap: 12px; }
-#app .activity {
-  padding: 0 12px 0 0;
-  border: var(--edge);
-  border-radius: var(--r-card);
-  background: var(--card);
-  box-shadow: var(--lift);
-  overflow: hidden;
-}
-#app .activity-main { grid-template-columns: 62px 1fr auto; min-height: 72px; }
-#app .activity-name { font-size: 1.12rem; font-weight: 700; }
+/* Icon tiles: solid blue with a white icon. */
 #app .sport {
   border: var(--edge);
-  border-radius: var(--r-ctl);
   background: var(--accent);
   color: var(--ink);
-  box-shadow: var(--lift-sm);
 }
-#app .activity .sport {
-  width: 62px;
-  height: 100%;
-  min-height: 72px;
-  border: 0;
-  border-right: var(--edge);
-  border-radius: 0;
-  box-shadow: none;
-}
-#app .activity .sport svg { width: 26px; height: 26px; }
 
 /* The big number on each screen sits on a light blue block. */
 #app .hero {
@@ -1414,7 +1376,6 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--lift);
 }
 #app .hero :is(.kicker, .fine) { color: var(--text); }
-#app .hero-stat { font-size: 3.6rem; }
 #app .hero .btn.ghost { background: var(--card); border: var(--edge); box-shadow: var(--lift-sm); }
 
 /* Start a workout: three solid blue buttons, the main action on Gym. */
@@ -1442,6 +1403,8 @@ input:focus, select:focus, textarea:focus {
 #app .toast { border: var(--edge); border-radius: var(--r-ctl); box-shadow: var(--lift); }
 
 /* Workout. */
+#app .w-status { border: var(--edge); }
+#app .w-row.complete .w-status { background: var(--accent); color: var(--ink); }
 #app .lift-card { border: var(--edge); border-radius: var(--r-ctl); }
 
 /* Nutrition screens. */
