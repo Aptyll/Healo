@@ -1,13 +1,13 @@
 // Guided pages for the three goals that used to be a blank log:
 //   Sleep   - a bedtime worked out from your wake-up time, and a one-step nightly log
 //   Budget  - one weekly spending amount, and what is left of it
-//   Running - an 8 week jog/walk plan with a timer that says when to switch
+//   Running - a weekly goal in distance or time, and one field to add a run
 // Loaded before app.js. app.js calls Goals.page() from renderArea() and Goals.stat()
 // from rowStat(); everything here leans on app.js globals (state, mutate, render,
 // toast, esc, ui, todayIso and the time helpers) only at call time, which is why
 // load() below checks the saved time itself instead of calling a helper.
 // Logs are ordinary entries, so check-ins, streaks, storage and "Clear this space"
-// keep working. Only the settings (bedtime, weekly amount, plan position) live here.
+// keep working. Only the settings (bedtime, weekly amount, running goal) live here.
 (function () {
   const KEY = "goals-space-plans-v1";
   const NUTRITION_KEY = "goals-space-nutrition-v1";
@@ -17,31 +17,16 @@
   const FEELS = ["Great", "Okay", "Rough"];
   const WEEKLY_PICKS = [50, 75, 100, 150];
   const CATEGORIES = ["Groceries", "Eating out", "Gas", "Fun", "Other"];
-  const EFFORTS = ["Easy", "Okay", "Hard"];
-  const WARMUP = 5;
-  const RUNS_PER_WEEK = 3;
-
-  // Jog and walk minutes, repeated `reps` times, after a 5 minute warm-up walk.
-  const PLAN = [
-    { jog: 1, walk: 2, reps: 6 },
-    { jog: 2, walk: 2, reps: 5 },
-    { jog: 3, walk: 2, reps: 4 },
-    { jog: 5, walk: 2, reps: 3 },
-    { jog: 8, walk: 2, reps: 2 },
-    { jog: 10, walk: 2, reps: 2 },
-    { jog: 20, walk: 2, reps: 1 },
-    { jog: 30, walk: 2, reps: 1 }
-  ];
-  const TOTAL_RUNS = PLAN.length * RUNS_PER_WEEK;
+  const RUN_MODES = {
+    miles: { name: "Distance", label: "Miles", unit: "mi", picks: [3, 6, 9, 12], step: "0.01", placeholder: "1.5" },
+    minutes: { name: "Time", label: "Minutes", unit: "min", picks: [30, 60, 90, 120], step: "1", placeholder: "20" }
+  };
 
   let store = load();
   let local = freshLocal();
-  let audio = null;
-  let wakeLock = null;
-  let lastPhase = -1;
 
   function freshLocal() {
-    return { sleepLog: false, sleepSetup: false, sleepDraft: null, budgetSetup: false, budgetDraft: null, runFinish: null, runDraft: null };
+    return { sleepLog: false, sleepSetup: false, sleepDraft: null, budgetSetup: false, budgetDraft: null, runSetup: false, runMode: "" };
   }
 
   function load() {
@@ -49,8 +34,8 @@
     try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch { data = {}; }
     const hours = Number(data.sleep?.hours);
     const weekly = Number(data.budget?.weekly);
-    const next = Number(data.run?.next);
-    const startedAt = Number(data.run?.live?.startedAt);
+    const runGoal = Number(data.run?.goal);
+    const runMode = data.run?.mode === "minutes" ? "minutes" : "miles";
     return {
       sleep: {
         set: Boolean(data.sleep?.set),
@@ -58,11 +43,7 @@
         hours: SLEEP_HOURS.includes(hours) ? hours : 8
       },
       budget: { weekly: Number.isFinite(weekly) && weekly > 0 ? Math.min(weekly, 100000) : 0 },
-      run: {
-        started: Boolean(data.run?.started),
-        next: Number.isInteger(next) && next >= 0 ? Math.min(next, TOTAL_RUNS) : 0,
-        live: Number.isFinite(startedAt) && startedAt > 0 ? { startedAt } : null
-      },
+      run: Number.isFinite(runGoal) && runGoal > 0 ? { mode: runMode, goal: Math.min(runGoal, 10000) } : { mode: "", goal: 0 },
       cartSig: typeof data.cartSig === "string" ? data.cartSig.slice(0, 4000) : ""
     };
   }
@@ -463,270 +444,102 @@
 
   /* ---------- Running ---------- */
 
-  function weekOf(index) {
-    return Math.min(Math.floor(index / RUNS_PER_WEEK), PLAN.length - 1);
-  }
-
-  function totalMinutes(week) {
-    const plan = PLAN[week];
-    return WARMUP + plan.reps * plan.jog + (plan.reps - 1) * plan.walk;
-  }
-
-  function mins(value) {
-    return `${value} ${value === 1 ? "minute" : "minutes"}`;
-  }
-
-  function recipe(week) {
-    const plan = PLAN[week];
-    if (plan.reps === 1) return `Jog ${mins(plan.jog)} without stopping.`;
-    return `Jog ${mins(plan.jog)}, walk ${mins(plan.walk)}. Do that ${plan.reps} times.`;
-  }
-
-  // The run as a list of timed parts. The walk after the last jog is left out: that is the cool-down.
-  function segments(week) {
-    const plan = PLAN[week];
-    const list = [{ kind: "Warm up", hint: "Easy walk", seconds: WARMUP * 60, round: 0 }];
-    for (let i = 1; i <= plan.reps; i += 1) {
-      list.push({ kind: "Jog", hint: "Slow enough to talk", seconds: plan.jog * 60, round: i });
-      if (i < plan.reps) list.push({ kind: "Walk", hint: "Catch your breath", seconds: plan.walk * 60, round: i });
-    }
-    return list;
-  }
-
-  function liveState() {
-    const live = store.run.live;
-    if (!live) return null;
-    const week = weekOf(store.run.next);
-    const list = segments(week);
-    const elapsed = Math.max(0, Math.floor((Date.now() - live.startedAt) / 1000));
-    let passed = 0;
-    for (let i = 0; i < list.length; i += 1) {
-      if (elapsed < passed + list[i].seconds) {
-        return { week, list, index: i, segment: list[i], remaining: passed + list[i].seconds - elapsed, elapsed, done: false };
-      }
-      passed += list[i].seconds;
-    }
-    return { week, list, index: list.length, segment: null, remaining: 0, elapsed, done: true };
-  }
-
-  function clock(seconds) {
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  function runTotal(from, to) {
+    return entriesFor("running").filter((entry) => entry.date >= from && entry.date <= to)
+      .reduce((sum, entry) => sum + (numberFrom(entry, store.run.mode) || 0), 0);
   }
 
   function runs() {
     return entriesFor("running").filter((entry) => numberFrom(entry, "minutes") != null || numberFrom(entry, "miles") != null).sort(newestFirst);
   }
 
-  function planGrid() {
-    const rows = PLAN.map((plan, week) => {
-      const dots = Array.from({ length: RUNS_PER_WEEK }, (_, run) => {
-        const index = week * RUNS_PER_WEEK + run;
-        const cls = index < store.run.next ? " done" : index === store.run.next ? " next" : "";
-        return `<i class="gl-dot${cls}">${index < store.run.next ? ICONS.check : ""}</i>`;
-      }).join("");
-      const text = plan.reps === 1 ? `Jog ${plan.jog} min` : `${plan.reps} × jog ${plan.jog}, walk ${plan.walk}`;
-      return `<div class="gl-week${weekOf(store.run.next) === week && store.run.next < TOTAL_RUNS ? " current" : ""}">
-        <span class="gl-week-name">Week ${week + 1}</span>
-        <span class="fine">${esc(text)}</span>
-        <span class="gl-dots">${dots}</span>
-      </div>`;
-    }).join("");
-    return `<div class="gl-plan">${rows}</div>`;
-  }
-
-  function runFinishCard() {
-    const draft = local.runFinish;
-    const effort = EFFORTS.includes(draft.effort) ? draft.effort : "Okay";
-    const efforts = EFFORTS.map((value) => pick("run-effort", value, value, effort === value)).join("");
+  function runSetupCard() {
+    const mode = local.runMode || store.run.mode || "miles";
+    const info = RUN_MODES[mode];
+    const modes = Object.entries(RUN_MODES).map(([key, item]) => pick("run-mode", key, item.name, mode === key)).join("");
+    const picks = info.picks.map((value) => pick("run-goal", value, `${value} ${info.unit}`, store.run.mode === mode && store.run.goal === value)).join("");
+    const custom = store.run.mode === mode && store.run.goal && !info.picks.includes(store.run.goal) ? store.run.goal : "";
     return `<section class="panel stack">
-      <h2>${draft.fromTimer ? "Save this run" : "Log a run"}</h2>
-      <form class="stack" data-gl-form="run-save" autocomplete="off">
-        <div class="time-pair">
-          <label class="field"><span>Minutes</span><input name="minutes" type="number" inputmode="numeric" min="1" step="1" value="${esc(draft.minutes)}" required></label>
-          <label class="field"><span>Miles (optional)</span><input name="miles" type="number" inputmode="decimal" min="0" step="0.01" placeholder="1.5" value="${esc(draft.miles || "")}"></label>
-        </div>
-        <div class="field"><span>How hard was it</span><div class="day-picks">${efforts}</div></div>
-        <button class="btn full" type="submit">Save run</button>
-        <button class="btn ghost full" type="button" data-gl="run-cancel-finish">${draft.fromTimer ? "Throw this run away" : "Cancel"}</button>
+      <h2>${store.run.goal ? "Change your goal" : "Pick a weekly goal"}</h2>
+      <div class="field"><span>Count my runs by</span><div class="day-picks">${modes}</div></div>
+      <div class="field"><span>Each week I want to run</span><div class="day-picks">${picks}</div></div>
+      <form class="gl-inline" data-gl-form="run-setup" autocomplete="off">
+        <label class="field"><span>Or type your own (${esc(info.unit)})</span><input name="goal" type="number" inputmode="decimal" min="0" step="${info.step}" placeholder="${info.picks[1]}" value="${esc(custom)}"></label>
+        <button class="btn" type="submit">Set</button>
       </form>
+      ${store.run.goal ? `<button class="btn ghost full" type="button" data-gl="run-close-setup">Cancel</button>` : ""}
     </section>`;
   }
 
-  function runLivePage(live) {
-    const next = live.list[live.index + 1];
-    const plan = PLAN[live.week];
-    return `<section class="gl-live" data-kind="${esc(live.segment.kind)}">
-        <p class="kicker" data-gl-round>${live.segment.round ? `Round ${live.segment.round} of ${plan.reps}` : "Before you jog"}</p>
-        <p class="gl-phase" data-gl-phase>${esc(live.segment.kind)}</p>
-        <p class="gl-count" data-gl-count>${clock(live.remaining)}</p>
-        <p class="fine" data-gl-hint>${esc(live.segment.hint)}</p>
-        <p class="fine" data-gl-next>${next ? `Next: ${esc(next.kind.toLowerCase())} ${clock(next.seconds)}` : "Last part. Then walk 5 minutes to cool down."}</p>
-      </section>
-      <p class="fine gl-center">Total <span data-gl-total>${clock(live.elapsed)}</span> of ${totalMinutes(live.week)} min. Keep the screen on. It beeps when it is time to switch.</p>
-      <button class="btn full" type="button" data-gl="run-end" style="margin-top:14px">End run</button>`;
-  }
-
   function runningPage() {
-    if (local.runFinish) return runFinishCard();
-    const live = liveState();
-    if (live && !live.done) return runLivePage(live);
     const all = runs();
     const recent = `<p class="section-label">Recent</p>
       ${recentList(all, (entry) => {
         const bits = [];
-        const minutes = numberFrom(entry, "minutes");
         const miles = numberFrom(entry, "miles");
-        if (minutes != null) bits.push(formatNum(minutes, "min"));
+        const minutes = numberFrom(entry, "minutes");
         if (miles != null) bits.push(formatNum(miles, "mi"));
-        return [bits.join(" · "), [entry.fields?.plan, entry.fields?.effort].filter(Boolean).join(" · ")];
-      }, "No runs logged yet.")}`;
-    if (!store.run.started) {
+        if (minutes != null) bits.push(formatNum(minutes, "min"));
+        return [bits.join(" · "), entry.note || ""];
+      }, "No runs added yet.")}`;
+    if (!store.run.goal) {
       return `<section class="hero">
           <p class="kicker">Running</p>
-          <p class="hero-stat">Jog 30 minutes in 8 weeks</p>
-          <p class="fine">Three short sessions a week on days you are not lifting legs. You start with 1 minute of jogging at a time and build up slowly.</p>
+          <p class="hero-stat">Distance or time</p>
+          <p class="fine">Pick one way to count your runs and a goal for the week. Then add each run.</p>
         </section>
-        <button class="btn full" type="button" data-gl="run-begin">Start the plan</button>
-        <section class="panel" style="margin-top:14px">
-          <h2>The 8 weeks</h2>
-          ${planGrid()}
-        </section>
+        ${runSetupCard()}
         ${recent}`;
     }
-    const finished = store.run.next >= TOTAL_RUNS;
-    const week = weekOf(store.run.next);
-    const run = store.run.next % RUNS_PER_WEEK + 1;
-    const top = finished ? `<section class="hero">
-          <p class="kicker">Plan finished</p>
-          <p class="hero-stat">You can jog 30 minutes</p>
-          <p class="fine">Keep 3 runs a week. A 5K is 3.1 miles, so try one when you feel ready.</p>
-        </section>
-        <button class="btn full" type="button" data-gl="run-open-finish">Log a run</button>`
-      : `<section class="hero">
-          <p class="kicker">Week ${week + 1} · Run ${run} of ${RUNS_PER_WEEK}</p>
-          <p class="hero-stat">${totalMinutes(week)} min</p>
-          <p class="fine">Walk ${WARMUP} minutes to warm up. ${esc(recipe(week))}</p>
-        </section>
-        <button class="btn full" type="button" data-gl="run-start">Start run</button>
-        <button class="btn secondary full" type="button" data-gl="run-open-finish" style="margin-top:8px">Already ran it? Log it</button>`;
-    return `${top}
-      <section class="panel" style="margin-top:14px">
-        <h2>The 8 weeks</h2>
-        ${planGrid()}
-        <div class="actions" style="margin-top:12px">
-          ${store.run.next > 0 ? `<button class="btn ghost" type="button" data-gl="run-repeat">${finished ? "Go back a week" : "Too hard? Repeat a week"}</button>` : ""}
-        </div>
+    const info = RUN_MODES[store.run.mode];
+    const start = weekStart();
+    const end = addDays(start, 6);
+    const goal = store.run.goal;
+    const total = runTotal(start, end);
+    const count = entriesFor("running").filter((entry) => entry.date >= start && entry.date <= end && numberFrom(entry, store.run.mode) != null).length;
+    const last = runTotal(addDays(start, -7), addDays(start, -1));
+    const lastDay = parseDate(end).toLocaleDateString(undefined, { weekday: "long" });
+    const detail = total >= goal
+      ? `Goal of ${formatNum(goal, info.unit)} reached in ${count} ${count === 1 ? "run" : "runs"}.`
+      : `${formatNum(goal - total, info.unit)} to go for your ${formatNum(goal, info.unit)} goal by ${lastDay}.`;
+    return `<section class="hero">
+        <p class="kicker">This week</p>
+        <p class="hero-stat">${esc(formatNum(total, info.unit))}</p>
+        <p class="fine">${esc(detail)}</p>
+        <div class="bar" style="margin-top:12px"><i style="width:${Math.round(Math.min(total / goal, 1) * 100)}%"></i></div>
       </section>
-      <section class="panel" style="margin-top:12px">
-        <h2>Keep it easy</h2>
-        <ol class="gl-tips">
-          <li>Jog slow enough that you could talk. Slower than you think.</li>
-          <li>Take a day off between runs.</li>
-          <li>Sore knees or shins? Repeat the week. Sharp pain? Stop.</li>
-        </ol>
+      ${local.runSetup ? runSetupCard() : `<section class="panel stack">
+        <h2>Add a run</h2>
+        <form class="gl-inline" data-gl-form="run-add" autocomplete="off">
+          <label class="field"><span>${esc(info.label)}</span><input name="amount" type="number" inputmode="decimal" min="0" step="${info.step}" placeholder="${info.placeholder}" required></label>
+          <button class="btn" type="submit">Add</button>
+        </form>
+        <p class="fine">Last week: ${esc(formatNum(last, info.unit))}.</p>
       </section>
+      <button class="btn ghost" type="button" data-gl="run-open-setup" style="margin-top:12px">Change goal</button>`}
       ${recent}`;
   }
 
-  function beep(kind) {
-    if (!audio) return;
-    try {
-      const tones = kind === "Jog" ? [880, 880] : kind === "Walk" ? [520] : [660, 880, 1040];
-      tones.forEach((freq, i) => {
-        const osc = audio.createOscillator();
-        const gain = audio.createGain();
-        osc.frequency.value = freq;
-        gain.gain.value = 0.25;
-        osc.connect(gain).connect(audio.destination);
-        const at = audio.currentTime + i * 0.28;
-        osc.start(at);
-        osc.stop(at + 0.2);
-      });
-    } catch { /* sound is a bonus */ }
-  }
-
-  async function holdScreen() {
-    try {
-      if (navigator.wakeLock && !wakeLock) {
-        wakeLock = await navigator.wakeLock.request("screen");
-        wakeLock.addEventListener("release", () => { wakeLock = null; });
-      }
-    } catch { wakeLock = null; }
-  }
-
-  function releaseScreen() {
-    try { wakeLock?.release(); } catch { /* already gone */ }
-    wakeLock = null;
-  }
-
-  function startRun() {
-    try {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (Ctx && !audio) audio = new Ctx();
-      audio?.resume?.();
-    } catch { audio = null; }
-    store.run.live = { startedAt: Date.now() };
+  function setRunGoal(mode, value) {
+    const info = RUN_MODES[mode];
+    const goal = Math.round(Number(value) * 100) / 100;
+    if (!info || !Number.isFinite(goal) || goal <= 0 || goal > 10000) return toast("Type a goal above zero.");
+    const before = { ...store.run };
+    store.run = { mode, goal };
     if (!save()) {
-      store.run.live = null;
+      store.run = before;
       return;
     }
-    lastPhase = 0;
-    holdScreen();
+    local.runSetup = false;
+    local.runMode = "";
     render({ keepDraft: false });
+    toast(`Goal set: ${formatNum(goal, info.unit)} a week.`);
   }
 
-  function endRun(live) {
-    const week = weekOf(store.run.next);
-    const minutes = live.done ? totalMinutes(week) : Math.max(1, Math.round(live.elapsed / 60));
-    local.runFinish = { minutes: String(minutes), miles: "", effort: "Okay", fromTimer: true, complete: live.done || live.elapsed >= totalMinutes(week) * 60 * 0.8 };
-    store.run.live = null;
-    save();
-    releaseScreen();
-    lastPhase = -1;
-    if (route().area?.id === "running") render({ keepDraft: false });
-  }
-
-  function tick() {
-    const live = liveState();
-    if (!live) return;
-    if (live.done) {
-      beep("Done");
-      endRun(live);
-      if (route().area?.id === "running") toast("Run done. Walk 5 minutes to cool down.");
-      return;
-    }
-    if (lastPhase !== -1 && live.index !== lastPhase) beep(live.segment.kind);
-    const changed = live.index !== lastPhase;
-    lastPhase = live.index;
-    const box = document.querySelector(".gl-live");
-    if (!box) return;
-    if (changed) {
-      render({ keepDraft: false });
-      return;
-    }
-    box.querySelector("[data-gl-count]").textContent = clock(live.remaining);
-    const total = document.querySelector("[data-gl-total]");
-    if (total) total.textContent = clock(live.elapsed);
-  }
-
-  function readRunDraft() {
-    const form = document.querySelector("[data-gl-form='run-save']");
-    if (!form || !local.runFinish) return;
-    const data = Object.fromEntries(new FormData(form).entries());
-    local.runFinish = { ...local.runFinish, minutes: String(data.minutes || ""), miles: String(data.miles || "") };
-  }
-
-  function saveRun() {
-    readRunDraft();
-    const draft = local.runFinish;
-    const minutes = Math.round(Number(draft.minutes));
-    const miles = draft.miles === "" ? null : Number(draft.miles);
-    if (!Number.isFinite(minutes) || minutes < 1 || minutes > 600) return toast("Type how many minutes it took.");
-    if (miles != null && (!Number.isFinite(miles) || miles < 0 || miles > 100)) return toast("Check the miles.");
-    const onPlan = store.run.started && store.run.next < TOTAL_RUNS && draft.complete !== false;
-    const week = weekOf(store.run.next);
-    const label = onPlan ? `Week ${week + 1}, run ${store.run.next % RUNS_PER_WEEK + 1}` : "";
-    const effort = EFFORTS.includes(draft.effort) ? draft.effort : "Okay";
+  function addRun(value) {
+    const info = RUN_MODES[store.run.mode];
+    const amount = Math.round(Number(value) * 100) / 100;
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 1000) return toast(`Type the ${info.label.toLowerCase()} you ran.`);
     const ok = mutate(() => {
       const today = todayIso();
       state.entries = state.entries.filter((entry) => !(entry.area === "running" && entry.date === today && isBlank(entry)));
@@ -736,22 +549,15 @@
         date: today,
         checked: true,
         note: "",
-        fields: { miles: miles ? String(miles) : "", minutes: String(minutes), plan: label, effort },
+        fields: { miles: "", minutes: "", [store.run.mode]: String(amount) },
         photo: "",
         createdAt: new Date().toISOString()
       });
     });
     if (!ok) return;
-    if (onPlan) {
-      store.run.next += 1;
-      save();
-    }
-    local.runFinish = null;
+    const left = store.run.goal - runTotal(weekStart(), addDays(weekStart(), 6));
     render({ keepDraft: false });
-    if (!onPlan) toast(store.run.next < TOTAL_RUNS && store.run.started ? "Saved. Cut short, so this run stays next on the plan." : "Run saved.");
-    else if (store.run.next >= TOTAL_RUNS) toast("Plan finished. 30 minutes without stopping.");
-    else if (effort === "Hard") toast("Saved. If the next one is hard too, repeat the week.");
-    else toast(store.run.next % RUNS_PER_WEEK === 0 ? `Week ${week + 1} done.` : "Run saved.");
+    toast(left > 0 ? `Added. ${formatNum(left, info.unit)} to go this week.` : "Added. Weekly goal reached.");
   }
 
   /* ---------- Wiring ---------- */
@@ -773,10 +579,9 @@
       const left = store.budget.weekly - spentBetween(weekStart(), addDays(weekStart(), 6));
       return { value: formatNum(Math.abs(left), "$"), label: left < 0 ? "Over this week" : "Left this week" };
     }
-    if (store.run.live) return { value: "", label: "Run in progress" };
-    if (!store.run.started) return { value: "", label: "Start the 8 week plan" };
-    if (store.run.next >= TOTAL_RUNS) return { value: "Done", label: "Plan finished" };
-    return { value: `Week ${weekOf(store.run.next) + 1}`, label: `Run ${store.run.next % RUNS_PER_WEEK + 1} of ${RUNS_PER_WEEK} is next` };
+    if (!store.run.goal) return { value: "", label: "Pick a weekly goal" };
+    const info = RUN_MODES[store.run.mode];
+    return { value: formatNum(runTotal(weekStart(), addDays(weekStart(), 6)), info.unit), label: `of ${formatNum(store.run.goal, info.unit)} this week` };
   }
 
   function onClick(button) {
@@ -827,31 +632,12 @@
       return;
     }
 
-    if (action === "run-begin") {
-      store.run.started = true;
-      if (!save()) store.run.started = false;
-    }
-    if (action === "run-start") return startRun();
-    if (action === "run-end") {
-      const live = liveState();
-      if (live) return endRun(live);
-    }
-    if (action === "run-open-finish") {
-      const planned = store.run.next < TOTAL_RUNS ? totalMinutes(weekOf(store.run.next)) : 30;
-      local.runFinish = { minutes: String(planned), miles: "", effort: "Okay", fromTimer: false };
-    }
-    if (action === "run-cancel-finish") local.runFinish = null;
-    if (action === "run-effort") {
-      readRunDraft();
-      local.runFinish = { ...local.runFinish, effort: value };
-    }
-    if (action === "run-repeat") {
-      const current = Math.min(store.run.next, TOTAL_RUNS - 1);
-      const start = current - current % RUNS_PER_WEEK;
-      store.run.next = store.run.next === start ? Math.max(0, start - RUNS_PER_WEEK) : start;
-      save();
-      render({ keepDraft: false });
-      return toast(`Back to the start of week ${weekOf(store.run.next) + 1}.`);
+    if (action === "run-mode") local.runMode = RUN_MODES[value] ? value : "miles";
+    if (action === "run-goal") return setRunGoal(local.runMode || store.run.mode || "miles", value);
+    if (action === "run-open-setup") local.runSetup = true;
+    if (action === "run-close-setup") {
+      local.runSetup = false;
+      local.runMode = "";
     }
     render({ keepDraft: false });
   }
@@ -864,7 +650,6 @@
       try { localStorage.removeItem(KEY); } catch { /* nothing to clear */ }
       store = load();
       local = freshLocal();
-      releaseScreen();
     }
   });
 
@@ -894,7 +679,8 @@
       const category = CATEGORIES.includes(local.budgetDraft?.category) ? local.budgetDraft.category : "Groceries";
       addExpense(amount, category);
     }
-    if (kind === "run-save") saveRun();
+    if (kind === "run-setup") setRunGoal(local.runMode || store.run.mode || "miles", data.goal);
+    if (kind === "run-add") addRun(data.amount);
   });
 
   // Keep "In bed by" in step with the wake-up time while it is being picked.
@@ -906,17 +692,9 @@
   });
 
   window.addEventListener("hashchange", () => {
-    const keepFinish = local.runFinish?.fromTimer ? local.runFinish : null;
     local = freshLocal();
-    local.runFinish = keepFinish;
     if (!store.sleep.set) store = { ...store, sleep: load().sleep };
   });
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && store.run.live) holdScreen();
-  });
-
-  setInterval(tick, 500);
 
   window.Goals = { has, page, stat };
 })();
