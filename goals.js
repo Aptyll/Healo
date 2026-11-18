@@ -337,7 +337,7 @@
         : "Everything on your list is in the cart."}</p>
       <div class="actions" style="margin-top:12px">
         ${canLog ? `<button class="btn" type="button" data-gl="budget-log-cart">Add cart as spent, ${esc(formatNum(list.cartTotal, "$"))}</button>` : ""}
-        <a class="btn secondary" href="#/area/nutrition">Open the list</a>
+        <a class="btn secondary" href="#/area/nutrition/order">Open the list</a>
       </div>
     </section>`;
   }
