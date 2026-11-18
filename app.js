@@ -57,10 +57,11 @@ const AREAS = [
     id: "nutrition",
     name: "Nutrition",
     color: "#73d6a0",
-    blurb: "Meals, calories, and a note if you want one.",
+    blurb: "Log what you eat. Calories and protein add up here.",
     fields: [
       { key: "meal", label: "Meal", type: "text", placeholder: "Lunch" },
-      { key: "calories", label: "Calories", type: "number", step: "1", unit: "cal" }
+      { key: "calories", label: "Calories", type: "number", step: "1", unit: "cal" },
+      { key: "protein", label: "Protein", type: "number", step: "1", unit: "g" }
     ],
     suggest: { title: "Calories today", target: 2200, unit: "cal", mode: "sum", metric: "calories", period: "day", direction: "cap" }
   },
@@ -367,7 +368,8 @@ function snapshotBits(area) {
   if (area.id === "nutrition") {
     const today = list.filter((entry) => entry.date === todayIso());
     const calories = today.reduce((sum, entry) => sum + (numberFrom(entry, "calories") || 0), 0);
-    return [["Today", formatNum(calories, "cal")], ["Meals", String(today.length)]];
+    const protein = today.reduce((sum, entry) => sum + (numberFrom(entry, "protein") || 0), 0);
+    return [["Today", formatNum(calories, "cal")], ["Protein today", formatNum(protein, "g")]];
   }
   return [["Entries", String(list.length)], ["Checked days", String(new Set(list.filter((entry) => entry.checked).map((entry) => entry.date)).size)]];
 }
@@ -539,11 +541,12 @@ function renderArea(area) {
       ${hero.showBar ? `<div class="bar${hero.over ? " over" : ""}" style="margin-top:12px"><i style="width:${Math.round(hero.ratio * 100)}%"></i></div>` : ""}
       <button class="btn ghost" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${on}" style="margin-top:12px">${on ? "Checked in today" : "Check in today"}</button>
     </section>`;
-  return `${top}
+  const page = `${top}
     <div class="snap">${snaps}</div>
     ${renderGoal(area, goal)}
     <p class="section-label">Recent</p>
     ${list}`;
+  return area.id === "nutrition" && window.Nutrition ? window.Nutrition.page(area, page) : page;
 }
 
 const GYM_DAYS = {
