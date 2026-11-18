@@ -813,6 +813,10 @@ function elapsedMinutes() {
   return Math.max(0, Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 60000));
 }
 
+function setCountText(total) {
+  return `${total} ${total === 1 ? "set" : "sets"} logged`;
+}
+
 function setDone(set) {
   return String(set.reps).trim() !== "";
 }
@@ -869,7 +873,7 @@ function renderActive() {
       <div>
         <p class="kicker">${esc(active.day)} · started ${esc(clockText(active.start))}</p>
         <p class="hero-stat"><span data-elapsed>${esc(durationText(elapsedMinutes()))}</span></p>
-        <p class="fine"><span data-set-count>${total}</span> ${total === 1 ? "set" : "sets"} logged · type reps, or tap ✓ to repeat last time</p>
+        <p class="fine"><span data-set-count>${setCountText(total)}</span> · type reps, or tap ✓ to repeat last time</p>
       </div>
     </section>
     <datalist id="lift-names">${options}</datalist>
@@ -963,7 +967,7 @@ function onWorkoutInput(target) {
   row.classList.toggle("done", done);
   row.querySelector(".w-check")?.setAttribute("aria-pressed", String(done));
   const counter = document.querySelector("[data-set-count]");
-  if (counter) counter.textContent = String(active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0));
+  if (counter) counter.textContent = setCountText(active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0));
   saveActive();
 }
 
