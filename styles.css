@@ -993,3 +993,150 @@ input:focus, select:focus, textarea:focus {
 }
 
 .w-set-actions .btn { flex: 1; }
+
+/* Folded exercises: one line each, so a whole workout fits on one screen. */
+.w-list { gap: 8px; }
+
+.w-clock {
+  margin: 0 0 2px;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.w-top { margin: 0 0 12px; }
+
+.w-row {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 16px;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+}
+
+.w-row:active { background: var(--card-2); }
+
+.w-status {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.w-status svg { width: 18px; height: 18px; }
+
+.w-row.partial .w-status { border-color: color-mix(in srgb, var(--accent) 60%, transparent); color: var(--accent); }
+
+.w-row.complete .w-status { background: var(--ok); border-color: transparent; color: #0b1f14; }
+
+.w-row-text { min-width: 0; display: grid; gap: 2px; }
+
+.w-row-name {
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.w-row-sets {
+  color: var(--muted);
+  font-size: 0.86rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.w-row.complete .w-row-name { color: var(--muted); }
+
+.w-chev { color: var(--faint); font-size: 1.4rem; line-height: 1; }
+
+.w-lift { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+
+.w-fold { font-size: 1.1rem; }
+
+.w-set { gap: 6px; }
+
+.w-input { min-height: 48px; padding: 8px; }
+
+.w-check { width: 48px; height: 48px; }
+
+.w-set-actions .btn { min-height: 44px; }
+
+.w-all-done {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+  font-weight: 650;
+}
+
+.topbar .w-clock {
+  font-size: 1.3rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.top-finish { min-height: 44px; padding: 0 18px; flex: none; }
+
+.w-top { margin: -2px 0 10px; }
+
+.w-list { gap: 6px; }
+
+.w-row { min-height: 52px; padding: 6px 12px; grid-template-columns: 34px minmax(0, 1fr) 16px; }
+
+.w-status { width: 34px; height: 34px; }
+
+.w-lift { padding: 10px; gap: 6px; }
+
+.w-lift-head { margin-bottom: -4px; }
+
+.w-prev { margin: 0 0 0 8px; }
+
+.w-input { min-height: 44px; }
+
+.w-check { width: 44px; height: 44px; }
+
+.w-head, .w-set { grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 44px; }
+
+.w-all-done p { margin: 0 0 10px; }
+
+.w-row { min-height: 48px; }
+
+.w-head { margin: -2px 0 -4px; font-size: 0.7rem; }
+
+.w-list { margin-top: 4px; }
+
+.w-head { grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 44px; }
+
+.w-head-note {
+  grid-column: 3 / 5;
+  grid-row: 1;
+  justify-self: end;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.w-head > span:nth-child(3) { grid-column: 3; grid-row: 1; }
+
+.w-list { gap: 5px; margin-top: 0; }
+
+.w-lift { padding: 8px 10px; gap: 5px; }
