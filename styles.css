@@ -1120,3 +1120,102 @@ input:focus, select:focus, textarea:focus {
 #app .nut-flag { color: var(--outline); background: var(--pop); border: 1.5px solid var(--outline); }
 #app .nut-flag.low { color: #fff; background: var(--danger); }
 #app .nut-flag.ok { color: #fff; background: var(--ok); }
+
+/* ---- Bolder pass: color blocks and big headings ---- */
+
+/* A faint dot grid behind everything. */
+#app {
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--outline) 13%, transparent) 1.2px, transparent 1.6px) 0 0 / 18px 18px,
+    var(--bg);
+}
+
+/* Top bar: a solid blue block with the screen name in white. */
+#app .topbar {
+  background: var(--accent);
+  border-bottom: var(--edge);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+#app .topbar h1 { color: #fff; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.04em; }
+
+/* Home greeting: big name with a yellow highlighter stripe, and a status tag. */
+#app .hello {
+  display: inline-block;
+  font-size: 3rem;
+  line-height: 1;
+  padding: 0 6px;
+  margin: 0 0 12px -6px;
+  background: linear-gradient(transparent 52%, var(--pop) 52%, var(--pop) 92%, transparent 92%);
+}
+#app .hello + .lede {
+  display: table;
+  padding: 5px 12px;
+  border: var(--edge);
+  border-radius: 99px;
+  background: var(--card);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.92rem;
+  box-shadow: var(--lift-sm);
+}
+
+/* Section labels become navy tags. */
+#app .section-label {
+  display: table;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--outline);
+  color: #fff;
+  letter-spacing: 0.08em;
+}
+
+/* Home rows are cards, each with a strip of its own color down the side. */
+#app .activity-list { display: grid; gap: 12px; }
+#app .activity {
+  padding: 0 12px 0 0;
+  border: var(--edge);
+  border-radius: var(--r-card);
+  background: var(--card);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+#app .activity-main { grid-template-columns: 62px 1fr auto; min-height: 72px; }
+#app .activity .sport {
+  width: 62px;
+  height: 100%;
+  min-height: 72px;
+  border: 0;
+  border-right: var(--edge);
+  border-radius: 0;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--area) 82%, white);
+}
+#app .activity .sport svg { width: 26px; height: 26px; }
+#app .activity-name { font-size: 1.12rem; font-weight: 700; }
+
+/* The big number on each screen sits on a color block. */
+#app .hero {
+  padding: 16px;
+  border: var(--edge);
+  border-radius: var(--r-card);
+  background: var(--block-2);
+  box-shadow: var(--lift);
+}
+#app .hero :is(.kicker, .fine) { color: var(--outline); }
+#app .hero-stat { font-size: 3.6rem; }
+#app .hero .btn.ghost { background: var(--card); border: var(--edge); box-shadow: var(--lift-sm); }
+#app .hero .btn.ghost[aria-pressed="true"] { background: var(--pop); }
+
+/* Color blocks rotate yellow, blue, coral. */
+#app :is(.snap div, .nut-cat):nth-child(3n + 1) { background: var(--pop); }
+#app :is(.snap div, .nut-cat):nth-child(3n + 2) { background: var(--block-2); }
+#app :is(.snap div, .nut-cat):nth-child(3n + 3) { background: var(--block-3); }
+#app :is(.snap div, .nut-cat) :is(.fine, .nut-cat-go) { color: var(--outline); }
+#app .nut-cat-name { font-size: 1.3rem; font-weight: 700; }
+#app .start-day { font-size: 1.5rem; }
+
+/* Main buttons are taller and louder. */
+#app .btn:not(.secondary, .ghost, .danger) { min-height: 54px; font-size: 1.06rem; letter-spacing: 0.01em; }
+#app :is(h2, .block-title) { font-weight: 700; }
+#app :is(.goal-card, .panel) h2 { font-size: 1.2rem; }
