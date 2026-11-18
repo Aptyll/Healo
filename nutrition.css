@@ -484,3 +484,40 @@
   gap: 12px;
   padding: 4px 14px 16px;
 }
+
+.nut-air { border-left-color: #e2b15a; }
+
+.nut-air strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #e2b15a;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nut-rail { margin-top: 0; }
+
+.nut-good {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+
+.nut-good b {
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--area);
+  background: color-mix(in srgb, var(--area) 14%, transparent);
+}
+
+.nut-meal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 14px;
+}

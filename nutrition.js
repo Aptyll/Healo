@@ -118,7 +118,7 @@
     {
       id: "chicken-rice", icon: "🍗", cost: 1.75, name: "Chicken, rice, and broccoli", type: "main", mins: 25, cal: 500, protein: 46,
       blurb: "The classic gym meal. Easy to cook four at a time.",
-      ingredients: [["6 oz", "chicken"], ["1/2 cup dry", "rice"], ["1 cup", "broccoli"], ["1 teaspoon", "oil"]],
+      ingredients: [["6 oz", "chicken"], ["1/3 cup dry", "rice"], ["1 cup", "broccoli"], ["1 teaspoon", "oil"]],
       steps: [
         "Start the rice first, following the bag. It takes about 18 minutes.",
         "Cut the chicken into bite-size pieces. Season with salt, pepper, and any seasoning you like.",
@@ -126,12 +126,13 @@
         "Microwave the broccoli in a covered bowl with a splash of water for 3 to 4 minutes.",
         "Put it all in a bowl. Soy sauce or hot sauce on top is good."
       ],
-      tip: "Meal prep: cook 4 servings and box them. They keep 3 to 4 days in the fridge."
+      tip: "Meal prep: cook 4 servings and box them. They keep 3 to 4 days in the fridge.",
+      air: "Toss the chicken pieces in the oil and seasoning. Air fry at 400°F for 8 to 10 minutes, shaking halfway, until 165°F inside."
     },
     {
       id: "taco-bowl", icon: "🌮", cost: 2.5, name: "Turkey taco bowl", type: "main", mins: 20, cal: 510, protein: 35,
       blurb: "Tastes like takeout, costs a lot less.",
-      ingredients: [["4 oz", "turkey"], ["1/3 cup dry", "rice"], ["1/2 cup", "beans"], ["2 tablespoons", "cheese"], ["2 tablespoons", "salsa"], ["2 teaspoons", "taco"], ["1 handful", "salad"]],
+      ingredients: [["4 oz", "turkey"], ["1/4 cup dry", "rice"], ["1/2 cup", "beans"], ["2 tablespoons", "cheese"], ["2 tablespoons", "salsa"], ["2 teaspoons", "taco"], ["1 handful", "salad"]],
       steps: [
         "Start the rice, following the bag.",
         "Brown the turkey in a pan on medium-high, breaking it up, 6 to 8 minutes until no pink is left.",
@@ -142,7 +143,7 @@
       tip: "A 1 lb pack of turkey makes 4 bowls. Cook it all and save the rest."
     },
     {
-      id: "sheet-pan", icon: "🥔", cost: 2, name: "Sheet pan chicken and potatoes", type: "main", mins: 35, cal: 550, protein: 36,
+      id: "sheet-pan", icon: "🥕", cost: 2, name: "Sheet pan chicken and potatoes", type: "main", mins: 35, cal: 550, protein: 36,
       blurb: "One pan in the oven. Almost no cleanup.",
       ingredients: [["2", "thighs"], ["1 medium", "potatoes"], ["1 cup", "carrots"], ["2 teaspoons", "oil"]],
       steps: [
@@ -151,7 +152,8 @@
         "Season the chicken and set it on the sheet too.",
         "Bake 25 to 30 minutes, until the chicken reaches 165°F and the potatoes are soft."
       ],
-      tip: "Thighs are cheaper than breasts and much harder to dry out."
+      tip: "Thighs are cheaper than breasts and much harder to dry out.",
+      air: "Air fry the potatoes and carrots at 400°F for 10 minutes. Add the chicken and cook 15 to 18 minutes more, flipping once, until 165°F inside."
     },
     {
       id: "pasta-meat", icon: "🍝", cost: 2.25, name: "Pasta with meat sauce", type: "main", mins: 20, cal: 470, protein: 34,
@@ -224,15 +226,143 @@
       ingredients: [["1 cup", "cottage"], ["1/2 cup", "berries"]],
       steps: ["Scoop the cottage cheese into a bowl.", "Top with berries."],
       tip: "Good late at night when you want something but dinner was hours ago."
+    },
+    {
+      id: "protein-oatmeal", icon: "🥄", cost: 0.75, name: "Peanut butter oatmeal", type: "breakfast", mins: 5, cal: 415, protein: 18,
+      blurb: "Warm, filling, and about the cheapest breakfast there is.",
+      ingredients: [["1/2 cup", "oats"], ["1 cup", "milk"], ["1 tablespoon", "pb"], ["1/2", "bananas"]],
+      steps: [
+        "Put the oats and milk in a big microwave-safe bowl. It bubbles up, so leave room.",
+        "Microwave 2 minutes, stir, then 30 seconds more if it is still thin.",
+        "Stir in the peanut butter and slice the banana on top."
+      ],
+      tip: "Stir in a spoon of Greek yogurt after cooking for more protein."
+    },
+    {
+      id: "breakfast-burrito", icon: "🌯", cost: 1.5, name: "Breakfast burrito", type: "breakfast", mins: 10, cal: 550, protein: 27,
+      blurb: "Eggs, beans, and cheese you can eat with one hand.",
+      ingredients: [["1 large", "tortillas"], ["2", "eggs"], ["1/4 cup", "beans"], ["2 tablespoons", "cheese"], ["1 tablespoon", "salsa"]],
+      steps: [
+        "Scramble the eggs in a pan on medium-low heat, 2 to 3 minutes.",
+        "Rinse the beans and stir them in for the last minute to warm up.",
+        "Warm the tortilla in the microwave for 15 seconds so it folds without tearing.",
+        "Fill it with the eggs, beans, cheese, and salsa. Fold in the sides and roll."
+      ],
+      tip: "Make a few, wrap them in foil, and freeze. Unwrap and microwave 2 minutes."
+    },
+    {
+      id: "salmon-rice", icon: "🍣", cost: 2.75, name: "Salmon, rice, and broccoli", type: "main", mins: 20, cal: 585, protein: 37,
+      blurb: "The easiest way to get omega-3 and vitamin D.",
+      ingredients: [["5 oz", "salmon"], ["1/3 cup dry", "rice"], ["1 cup", "broccoli"], ["1 teaspoon", "oil"]],
+      steps: [
+        "Thaw the salmon overnight in the fridge, or in a sealed bag in cold water for 30 minutes.",
+        "Start the rice, following the bag. Heat the oven to 400°F.",
+        "Put the salmon on a foil-lined sheet. Rub it with the oil, salt, and pepper.",
+        "Bake 12 to 15 minutes, until it flakes apart easily with a fork (145°F).",
+        "Microwave the broccoli in a covered bowl with a splash of water for 3 to 4 minutes."
+      ],
+      tip: "Soy sauce or a squeeze of lemon on top is all it needs.",
+      air: "Air fry the salmon at 400°F for 7 to 9 minutes. No flipping needed."
+    },
+    {
+      id: "turkey-chili", icon: "🍲", cost: 2.25, name: "Turkey chili", type: "main", mins: 30, cal: 470, protein: 37,
+      blurb: "One pot makes 4 servings. The amounts below are for the whole pot.",
+      ingredients: [["1 lb", "turkey"], ["2 cans", "beans"], ["1 jar", "marinara"], ["1 packet", "taco"]],
+      steps: [
+        "Brown the turkey in a large pot on medium-high, breaking it up, until no pink is left.",
+        "Stir in the taco seasoning.",
+        "Add the beans with their liquid, the marinara, and half a jar of water.",
+        "Bring it to a bubble, then turn the heat to low and simmer 15 to 20 minutes, stirring now and then.",
+        "Eat one bowl and box the other three."
+      ],
+      tip: "It keeps 3 to 4 days in the fridge and freezes well. Top with cheese or Greek yogurt."
+    },
+    {
+      id: "stir-fry", icon: "🥦", cost: 2, name: "Chicken stir fry", type: "main", mins: 20, cal: 615, protein: 48,
+      blurb: "Frozen vegetables make this fast.",
+      ingredients: [["6 oz", "chicken"], ["1 1/2 cups", "mixedveg"], ["1/3 cup dry", "rice"], ["1 tablespoon", "soy"], ["2 teaspoons", "oil"]],
+      steps: [
+        "Start the rice, following the bag.",
+        "Cut the chicken into thin strips.",
+        "Heat the oil in a pan on medium-high. Cook the chicken 5 to 6 minutes until there is no pink inside (165°F).",
+        "Add the frozen vegetables and cook 4 to 5 minutes until hot.",
+        "Stir in the soy sauce and serve over the rice."
+      ],
+      tip: "A little honey or garlic powder in the soy sauce makes it taste like takeout."
+    },
+    {
+      id: "baked-potato", icon: "🥔", cost: 1.5, name: "Loaded baked potato", type: "main", mins: 10, cal: 425, protein: 24,
+      blurb: "A microwave dinner that is actually good for you.",
+      ingredients: [["1 medium", "potatoes"], ["1/2 cup", "beans"], ["1/4 cup", "cheese"], ["1/4 cup", "yogurt"], ["2 tablespoons", "salsa"]],
+      steps: [
+        "Wash the potato and poke it all over with a fork.",
+        "Microwave 5 minutes, flip it, then 3 to 4 minutes more until a fork slides in easily.",
+        "Rinse the beans and microwave them for 1 minute.",
+        "Cut the potato open and mash the inside a little with a fork.",
+        "Top with the beans, cheese, salsa, and the yogurt in place of sour cream."
+      ],
+      tip: "Plain Greek yogurt tastes close to sour cream and adds protein.",
+      air: "For crispy skin, rub the potato with a little oil and salt and air fry at 400°F for 35 to 40 minutes."
+    },
+    {
+      id: "turkey-burger", icon: "🍔", cost: 2.5, name: "Turkey burger", type: "main", mins: 15, cal: 435, protein: 33,
+      blurb: "Burger night, made at home.",
+      ingredients: [["4 oz", "turkey"], ["2 slices", "bread"], ["2 tablespoons", "cheese"], ["1 handful", "salad"], ["1 cup", "carrots"]],
+      steps: [
+        "Mix the turkey with salt and pepper and press it into a flat patty, a little wider than the bread.",
+        "Cook in a pan on medium heat 5 to 6 minutes per side, until 165°F inside with no pink.",
+        "Put the cheese on top for the last minute so it melts.",
+        "Toast the bread and build the burger with the lettuce.",
+        "Eat the carrots on the side."
+      ],
+      tip: "Press a small dent in the middle of the patty so it cooks flat.",
+      air: "Air fry the patty at 375°F for 10 to 12 minutes, flipping once, until 165°F inside."
+    },
+    {
+      id: "chicken-wrap", icon: "🥬", cost: 1.75, name: "Chicken salad wrap", type: "main", noCook: true, mins: 5, cal: 495, protein: 40,
+      blurb: "No cooking. Easy to pack for campus.",
+      ingredients: [["1 large", "tortillas"], ["4 oz", "rotisserie"], ["2 tablespoons", "yogurt"], ["1 handful", "salad"]],
+      steps: [
+        "Shred the chicken into a bowl.",
+        "Mix in the yogurt, salt, and pepper.",
+        "Lay the lettuce on the tortilla, add the chicken, and roll it up tight."
+      ],
+      tip: "Greek yogurt replaces mayo here. Add hot sauce or mustard if you like."
+    },
+    {
+      id: "boiled-eggs", icon: "🥚", cost: 0.5, name: "Hard-boiled eggs", type: "snack", mins: 15, cal: 140, protein: 12,
+      blurb: "Boil six at once and snack on them all week. One serving is 2 eggs.",
+      ingredients: [["2", "eggs"]],
+      steps: [
+        "Put the eggs in a pot and cover them with cold water by about an inch.",
+        "Bring to a full boil, then turn off the heat and cover the pot.",
+        "Wait 10 to 12 minutes, then move the eggs to a bowl of cold water.",
+        "Peel when cool. Salt and pepper on top."
+      ],
+      tip: "Kept in the shell, they last a week in the fridge.",
+      air: "Air fry the eggs at 270°F for 15 minutes, then cool them in cold water. No pot needed."
     }
   ];
+
+  // Which Research nutrients each meal is a good source of.
+  const GOOD = {
+    "eggs-toast": ["protein"], "yogurt-bowl": ["protein", "calcium"], "overnight-oats": ["protein", "fiber", "calcium"],
+    "chicken-rice": ["protein", "fiber"], "taco-bowl": ["protein", "fiber"], "sheet-pan": ["protein", "potassium"],
+    "pasta-meat": ["protein"], "fried-rice": ["fiber"], "tuna-melt": ["protein", "omega3"],
+    "quesadilla": ["protein", "calcium"], "rotisserie-plate": ["protein"], "apple-pb": ["fiber", "magnesium"],
+    "cottage-fruit": ["protein", "calcium"], "protein-oatmeal": ["fiber", "calcium", "magnesium"],
+    "breakfast-burrito": ["protein", "fiber"], "salmon-rice": ["protein", "omega3", "vitd"],
+    "turkey-chili": ["protein", "fiber", "potassium", "magnesium"], "stir-fry": ["protein", "fiber"],
+    "baked-potato": ["protein", "fiber", "potassium"], "turkey-burger": ["protein"], "chicken-wrap": ["protein"],
+    "boiled-eggs": ["protein"]
+  };
 
   // Daily targets are for a man aged 19 to 30 (US Dietary Guidelines and NIH fact sheets).
   // Food amounts are rounded. The protein range is a common one for someone lifting, not an official target.
   const NUTRIENTS = [
     {
-      id: "protein", name: "Protein", target: "About 150 to 180 g a day while lifting",
-      why: "Builds and keeps muscle, and keeps you full while losing fat.",
+      id: "protein", name: "Protein", target: "At least 90 g a day. 130 to 180 g if you lift",
+      why: "Builds and keeps muscle, and keeps you full between meals.",
       foods: [["chicken", "6 oz, about 38 g"], ["yogurt", "1 cup, about 23 g"], ["tuna", "1 can, about 22 g"], ["cottage", "1 cup, about 25 g"], ["eggs", "3 eggs, about 18 g"]]
     },
     {
@@ -281,6 +411,16 @@
 
   const TYPE_LABEL = { breakfast: "Breakfast", main: "Lunch or dinner", snack: "Snack" };
 
+  const MEAL_FILTERS = [
+    ["all", "All"],
+    ["breakfast", "Breakfast"],
+    ["main", "Lunch & dinner"],
+    ["snack", "Snacks"],
+    ["air", "Air fryer"],
+    ["nocook", "No cooking"]
+  ];
+
+  let mealFilter = "all";
   let selectedMeal = RECIPES[0].id;
   let editingItem = "";
   let storeFilter = "all";
@@ -393,16 +533,31 @@
   // Cook: a row of meal cards to swipe through. The picked meal's recipe sits beneath.
   // Every recipe is in the page and only the picked one is shown, so picking a card
   // does not re-render and the row keeps its place.
+  function inFilter(recipe) {
+    if (mealFilter === "all") return true;
+    if (mealFilter === "air") return Boolean(recipe.air);
+    if (mealFilter === "nocook") return Boolean(recipe.noCook);
+    return recipe.type === mealFilter;
+  }
+
+  function nutrientName(id) {
+    return NUTRIENTS.find((nutrient) => nutrient.id === id).name;
+  }
+
   function cookView() {
-    const cards = RECIPES.map((recipe) => `<button class="nut-card" type="button" data-nut="pick-meal" data-id="${recipe.id}" aria-pressed="${recipe.id === selectedMeal}">
+    const list = RECIPES.filter(inFilter);
+    if (!list.some((recipe) => recipe.id === selectedMeal)) selectedMeal = list[0].id;
+    const chips = MEAL_FILTERS.map(([value, label]) => `<button class="chip" type="button" data-nut="meal-filter" data-value="${value}" aria-pressed="${mealFilter === value}">${label}</button>`).join("");
+    const cards = list.map((recipe) => `<button class="nut-card" type="button" data-nut="pick-meal" data-id="${recipe.id}" aria-pressed="${recipe.id === selectedMeal}">
         <span class="nut-card-icon" aria-hidden="true">${recipe.icon}</span>
         <span class="nut-card-name">${esc(recipe.name)}</span>
         <span class="nut-card-facts">${recipe.mins} min · ${money(recipe.cost)}</span>
       </button>`).join("");
-    const details = RECIPES.map(recipeDetail).join("");
+    const details = list.map(recipeDetail).join("");
     return `<div class="nut-sub">
       <h2 class="nut-title">Cook</h2>
-      <p class="fine">Swipe through the meals and tap one. The recipe is below.</p>
+      <p class="fine">${list.length} meals. Swipe through and tap one. The recipe is below.</p>
+      <div class="chips nut-chips">${chips}</div>
       <div class="nut-rail" id="nut-rail">${cards}</div>
       ${details}
       <p class="fine nut-foot">Calories, protein, and cost are estimates for one serving. Salt, pepper, and seasonings are not on the ingredient lists.</p>
@@ -423,18 +578,23 @@
         <div><span class="fine">Calories</span><strong>${recipe.cal}</strong></div>
         <div><span class="fine">Protein</span><strong>${recipe.protein} g</strong></div>
       </div>
+      <p class="nut-good"><span class="fine">Good source of</span>${GOOD[recipe.id].map((id) => `<b>${esc(nutrientName(id))}</b>`).join("")}</p>
       <p class="section-label">Ingredients</p>
       <ul class="nut-ingredients">${rows}</ul>
       <button class="btn secondary full" type="button" data-nut="add-recipe" data-id="${recipe.id}"${missing ? "" : " disabled"}>${missing ? "Add ingredients to my order" : "All on your order list"}</button>
       <p class="section-label">Steps</p>
       <ol class="nut-steps">${steps}</ol>
       <p class="nut-tip">${esc(recipe.tip)}</p>
+      ${recipe.air ? `<p class="nut-tip nut-air"><strong>Air fryer</strong>${esc(recipe.air)}</p>` : ""}
       <button class="btn full" type="button" data-nut="log-recipe" data-id="${recipe.id}">I ate this. Log it</button>
     </article>`;
   }
 
   // Bring the picked card into view after a render replaces the row.
   function showPickedCard() {
+    const chips = document.querySelector(".nut-chips");
+    const chip = chips?.querySelector('[aria-pressed="true"]');
+    if (chip) chips.scrollLeft = Math.max(0, chip.offsetLeft - chips.offsetLeft - (chips.clientWidth - chip.offsetWidth) / 2);
     const rail = document.getElementById("nut-rail");
     const card = rail?.querySelector('[aria-pressed="true"]');
     if (!rail || !card) return;
@@ -548,11 +708,14 @@
       const flag = score >= 2 ? `<span class="nut-flag low">Likely short</span>` : score === 1 ? `<span class="nut-flag">Could be better</span>` : asked ? `<span class="nut-flag ok">Looks covered</span>` : "";
       const foods = nutrient.foods.map(([key, amount]) => `<li><span>${esc(CATALOG[key][0])}</span><span class="muted">${esc(amount)}</span></li>`).join("");
       const missing = nutrient.foods.filter(([key]) => !has(CATALOG[key][0])).length;
+      const meals = RECIPES.filter((recipe) => GOOD[recipe.id].includes(nutrient.id)).slice(0, 6)
+        .map((recipe) => `<button class="pick" type="button" data-nut="pick-nutrient-meal" data-id="${recipe.id}">${recipe.icon} ${esc(recipe.name)}</button>`).join("");
       return `<details class="nut-nutrient"${score >= 2 ? " open" : ""}>
         <summary><span class="nut-meal-name">${esc(nutrient.name)}</span>${flag}</summary>
         <p class="nut-target">${esc(nutrient.target)}</p>
         <p class="fine">${esc(nutrient.why)}</p>
         <ul class="nut-ingredients">${foods}</ul>
+        ${meals ? `<p class="fine">Meals in Cook that help</p><div class="nut-meal-links">${meals}</div>` : ""}
         <button class="btn secondary full" type="button" data-nut="add-foods" data-id="${nutrient.id}"${missing ? "" : " disabled"}>${missing ? "Add these foods to my order" : "All on your order list"}</button>
       </details>`;
     }).join("");
@@ -623,6 +786,15 @@
       document.querySelectorAll(".nut-card").forEach((card) => card.setAttribute("aria-pressed", String(card.dataset.id === recipe.id)));
       document.querySelectorAll(".nut-recipe").forEach((block) => { block.hidden = block.dataset.recipe !== recipe.id; });
       button.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    }
+    if (action === "meal-filter") {
+      mealFilter = button.dataset.value;
+      refresh();
+    }
+    if (action === "pick-nutrient-meal" && recipe) {
+      mealFilter = "all";
+      selectedMeal = recipe.id;
+      location.hash = "#/area/nutrition/cook";
     }
     if (action === "store-filter") {
       storeFilter = button.dataset.value;
