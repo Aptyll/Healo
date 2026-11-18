@@ -6,7 +6,7 @@
   --line: rgba(243, 244, 246, 0.1);
   --text: #f3f4f6;
   --muted: #a0a6b0;
-  --faint: #6d7680;
+  --faint: #8d95a0;
   --accent: #ff5c33;
   --ink: #1c0d09;
   --ok: #73d6a0;
@@ -14,10 +14,15 @@
   --shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+  --safe-right: env(safe-area-inset-right);
   color-scheme: dark;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
 [hidden] { display: none !important; }
 
@@ -27,6 +32,12 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: Outfit, ui-sans-serif, system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.35;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
 }
 
 body {
@@ -49,6 +60,15 @@ button {
   cursor: pointer;
   border: 0;
   background: none;
+}
+
+/* No double-tap zoom or text selection on things you tap. */
+a, button, label, input, select, textarea { touch-action: manipulation; }
+
+a, button {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -141,14 +161,14 @@ img { max-width: 100%; display: block; }
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: calc(14px + var(--safe-top)) 16px 12px;
+  padding: calc(14px + var(--safe-top)) calc(16px + var(--safe-right)) 10px calc(16px + var(--safe-left));
   flex: none;
 }
 
 .topbar h1 {
   margin: 0;
-  font-size: 1.35rem;
-  letter-spacing: -0.04em;
+  font-size: 1.4rem;
+  letter-spacing: -0.03em;
   flex: 1;
 }
 
@@ -171,7 +191,10 @@ img { max-width: 100%; display: block; }
 main {
   flex: 1;
   overflow: auto;
-  padding: 4px 16px 20px;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px calc(16px + var(--safe-right)) 28px calc(16px + var(--safe-left));
   scrollbar-width: thin;
   scrollbar-color: #314033 transparent;
 }
@@ -197,11 +220,11 @@ main {
 }
 
 .section-label {
-  margin: 18px 0 10px;
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
+  margin: 22px 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: var(--muted);
   font-weight: 600;
 }
 
@@ -285,7 +308,7 @@ main {
   font-weight: 500;
 }
 
-.fine { font-size: 0.84rem; line-height: 1.4; }
+.fine { font-size: 0.9rem; line-height: 1.4; }
 
 .bar {
   height: 6px;
@@ -361,7 +384,7 @@ main {
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--line);
-  min-height: 40px;
+  min-height: 44px;
   font-weight: 600;
 }
 
@@ -398,7 +421,7 @@ main {
 label.field { display: grid; gap: 6px; }
 
 label.field span, .field > span, .file-btn {
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--muted);
 }
@@ -411,6 +434,7 @@ input, select, textarea {
   border: 1px solid var(--line);
   background: #12161a;
   outline: none;
+  font-size: max(1rem, 16px);
 }
 
 textarea {
@@ -554,8 +578,9 @@ input:focus, select:focus, textarea:focus {
   position: absolute;
   left: 16px;
   right: 16px;
-  bottom: calc(76px + var(--safe-bottom));
-  z-index: 6;
+  top: calc(12px + var(--safe-top));
+  z-index: 12;
+  box-shadow: var(--shadow);
   padding: 12px 14px;
   border-radius: 14px;
   background: #f4f7f1;
@@ -570,7 +595,7 @@ input:focus, select:focus, textarea:focus {
 .activity {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -578,10 +603,10 @@ input:focus, select:focus, textarea:focus {
   flex: 1;
   min-width: 0;
   display: grid;
-  grid-template-columns: 42px 1fr auto;
+  grid-template-columns: 46px 1fr auto;
   gap: 12px;
   align-items: center;
-  min-height: 72px;
+  min-height: 76px;
 }
 
 .activity-name, .feed-title {
@@ -601,8 +626,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .sport {
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
   border-radius: 12px;
@@ -613,11 +638,11 @@ input:focus, select:focus, textarea:focus {
 .sport svg { width: 22px; height: 22px; }
 
 .check-dot {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   flex: none;
   border-radius: 50%;
-  border: 2px solid var(--line);
+  border: 2px solid rgba(243, 244, 246, 0.3);
   color: var(--ink);
   display: grid;
   place-items: center;
@@ -628,7 +653,7 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--accent);
 }
 
-.check-dot svg { width: 16px; height: 16px; }
+.check-dot svg { width: 20px; height: 20px; }
 
 .hero { margin: 8px 0 16px; }
 
@@ -644,9 +669,9 @@ input:focus, select:focus, textarea:focus {
 
 .feed-item {
   display: grid;
-  grid-template-columns: 76px 1fr;
-  gap: 8px;
-  padding: 14px 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 16px 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -661,28 +686,49 @@ input:focus, select:focus, textarea:focus {
 
 .tabbar {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
 .tabbar a {
-  min-height: 58px;
+  min-height: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  color: var(--faint);
-  font-size: 0.72rem;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 0.76rem;
   font-weight: 650;
 }
+
+.tabbar svg { width: 24px; height: 24px; }
+
+.tabbar a:active { color: var(--text); }
 
 .tabbar a[aria-current="page"] { color: var(--accent); }
 
 .dock {
   display: grid;
   gap: 8px;
-  padding: 10px 16px calc(12px + var(--safe-bottom));
+  padding: 10px calc(16px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(16px + var(--safe-left));
 }
+
+/* The tab bar sits under the dock and already clears the home indicator. */
+.dock:has(+ .tabbar) {
+  padding-bottom: 10px;
+  border-top-color: transparent;
+  background: linear-gradient(to bottom, transparent, var(--bg) 45%);
+  margin-top: -18px;
+  padding-top: 18px;
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.dock:has(+ .tabbar) > * { pointer-events: auto; }
 
 .sheet-back {
   position: absolute;
@@ -697,6 +743,8 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   max-height: 88%;
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: #1a1d23;
   border-radius: 22px 22px 0 0;
   padding: 8px 16px calc(18px + var(--safe-bottom));
@@ -718,8 +766,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .pick {
-  min-height: 40px;
-  padding: 0 12px;
+  min-height: 44px;
+  padding: 0 14px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: #12161a;
@@ -753,7 +801,7 @@ input:focus, select:focus, textarea:focus {
 
 .set-head, .set-row {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 36px;
+  grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 44px;
   gap: 8px;
   align-items: center;
 }
@@ -765,8 +813,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .set-head {
-  color: var(--faint);
-  font-size: 0.75rem;
+  color: var(--muted);
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -779,8 +827,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .icon-x {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   color: var(--muted);
   font-size: 1.3rem;
@@ -867,7 +915,7 @@ input:focus, select:focus, textarea:focus {
 
 .w-lift-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 36px;
+  grid-template-columns: minmax(0, 1fr) 44px;
   gap: 6px;
   align-items: center;
 }

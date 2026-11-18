@@ -410,7 +410,7 @@ function render() {
   const glow = view.area?.color || "#ff5c33";
   document.title = view.area ? `${view.area.name} · Goals` : "Goals";
   const body = !state.profile ? renderWelcome() : view.name === "area" ? renderArea(view.area) : view.name === "me" ? renderMe() : renderHome();
-  const showTabs = state.profile && (view.name === "home" || view.name === "me");
+  const showTabs = Boolean(state.profile);
   const showDock = state.profile && view.name === "area" && !ui.logOpen;
   document.getElementById("app").innerHTML = `
     ${state.profile ? topbar(view) : ""}
@@ -438,9 +438,13 @@ function topbar(view) {
   return `<header class="topbar"><h1>${view.name === "me" ? "You" : "Goals"}</h1></header>`;
 }
 
+/* Areas that get their own tab and sit first on Home. */
+const TAB_AREAS = ["gym", "nutrition"];
+
 function tabbar(view) {
   const tab = (href, label, icon, on) => `<a href="${href}"${on ? ' aria-current="page"' : ""}>${icon}<span>${label}</span></a>`;
-  return `<nav class="tabbar">${tab("#/", "Home", ICONS.home, view.name === "home")}${tab("#/me", "You", ICONS.user, view.name === "me")}</nav>`;
+  const areaTabs = TAB_AREAS.map((id) => tab(`#/area/${id}`, esc(areaById(id).name), sportIcon(id), view.area?.id === id)).join("");
+  return `<nav class="tabbar" aria-label="Sections">${tab("#/", "Home", ICONS.home, view.name === "home")}${areaTabs}${tab("#/me", "You", ICONS.user, view.name === "me")}</nav>`;
 }
 
 function dock(area) {
@@ -475,7 +479,7 @@ function rowStat(area) {
 function renderHome() {
   const done = AREAS.filter((area) => checkedToday(area.id)).length;
   const streak = streakCount();
-  const rows = AREAS.map((area) => {
+  const row = (area) => {
     const stat = rowStat(area);
     const on = checkedToday(area.id);
     return `<div class="activity">
@@ -486,11 +490,16 @@ function renderHome() {
       </a>
       <button class="check-dot" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${on}" aria-label="${on ? "Checked in" : "Check in"} ${esc(area.name)}">${on ? ICONS.check : ""}</button>
     </div>`;
-  }).join("");
+  };
+  const focus = TAB_AREAS.map(areaById).map(row).join("");
+  const rest = AREAS.filter((area) => !TAB_AREAS.includes(area.id)).map(row).join("");
   return `<p class="kicker">${esc(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}</p>
     <h2 class="hello">${esc(state.profile.name)}</h2>
     <p class="lede">${done} of ${AREAS.length} today${streak ? ` · ${streak} day streak` : ""}</p>
-    <div class="activity-list">${rows}</div>`;
+    <p class="section-label">Focus</p>
+    <div class="activity-list">${focus}</div>
+    <p class="section-label">More</p>
+    <div class="activity-list">${rest}</div>`;
 }
 
 function heroFor(area) {
