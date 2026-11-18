@@ -1,22 +1,43 @@
 :root {
-  --bg: #101114;
-  --bg-raise: #171b20;
-  --card: #1a1d23;
-  --card-2: #242830;
-  --line: rgba(243, 244, 246, 0.1);
-  --text: #f3f4f6;
-  --muted: #a0a6b0;
-  --faint: #8d95a0;
-  --accent: #ff5c33;
-  --ink: #1c0d09;
-  --ok: #73d6a0;
-  --danger: #ff6b6b;
-  --shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  --font: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --bg: #f4f7fc;
+  --bg-raise: #e8eef8;
+  --card: #ffffff;
+  --card-2: #eaf0fa;
+  --field: #ffffff;
+  --tabbar: #ffffff;
+  --line: rgba(16, 32, 74, 0.16);
+  --ring: var(--outline);
+  --track: rgba(16, 32, 74, 0.12);
+  --grab: rgba(16, 32, 74, 0.3);
+  --text: #10204a;
+  --muted: #4f5b7d;
+  --faint: #76809d;
+  --accent: #2563eb;
+  --accent-text: #1d4ed8;
+  --ink: #ffffff;
+  --ok: #1d4ed8;
+  --on-ok: #ffffff;
+  --warn: #10204a;
+  --danger: #d92d20;
+  --toast: var(--tint);
+  --toast-text: var(--text);
+  --scrim: rgba(16, 32, 74, 0.4);
+  --stage: #dde5f2;
+  --glow-mix: 0%;
+  --shadow: var(--lift);
+  --outline: #10204a;
+  --tint: #d6e4ff;
+  --edge: 2px solid var(--outline);
+  --lift: 3px 3px 0 var(--outline);
+  --lift-sm: 2px 2px 0 var(--outline);
+  --r-card: 18px;
+  --r-ctl: 14px;
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
   --safe-left: env(safe-area-inset-left);
   --safe-right: env(safe-area-inset-right);
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -31,7 +52,7 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: Outfit, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font);
   font-size: 17px;
   line-height: 1.35;
   -webkit-text-size-adjust: 100%;
@@ -84,14 +105,14 @@ img { max-width: 100%; display: block; }
   flex-direction: column;
   position: relative;
   background:
-    radial-gradient(120% 36% at 50% -12%, color-mix(in srgb, var(--glow, #ff5c33) 16%, transparent), transparent 64%),
+    radial-gradient(120% 36% at 50% -12%, color-mix(in srgb, var(--glow, var(--accent)) var(--glow-mix), transparent), transparent 64%),
     var(--bg);
   overflow: hidden;
 }
 
 @media (min-width: 900px) {
   body {
-    background: #07080a;
+    background: var(--stage);
   }
 
   .stage {
@@ -101,7 +122,7 @@ img { max-width: 100%; display: block; }
     place-items: center;
     padding: 32px 24px;
     background:
-      radial-gradient(ellipse at center, #1a1e24 0%, #07080a 68%);
+      var(--stage);
   }
 
   .phone {
@@ -196,7 +217,7 @@ main {
   -webkit-overflow-scrolling: touch;
   padding: 4px calc(16px + var(--safe-right)) 28px calc(16px + var(--safe-left));
   scrollbar-width: thin;
-  scrollbar-color: #314033 transparent;
+  scrollbar-color: var(--card-2) transparent;
 }
 
 .kicker {
@@ -313,7 +334,7 @@ main {
 .bar {
   height: 6px;
   border-radius: 99px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--track);
   overflow: hidden;
 }
 
@@ -432,7 +453,7 @@ input, select, textarea {
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: #12161a;
+  background: var(--field);
   outline: none;
   font-size: max(1rem, 16px);
 }
@@ -456,7 +477,7 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   justify-content: center;
   color: var(--text);
-  background: #12161a;
+  background: var(--field);
 }
 
 .file-btn input { display: none; }
@@ -512,7 +533,7 @@ input:focus, select:focus, textarea:focus {
 .storage {
   height: 8px;
   border-radius: 99px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--track);
   overflow: hidden;
   margin: 8px 0;
 }
@@ -583,8 +604,8 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow);
   padding: 12px 14px;
   border-radius: 14px;
-  background: #f4f7f1;
-  color: #142006;
+  background: var(--toast);
+  color: var(--toast-text);
   font-weight: 650;
   text-align: center;
   pointer-events: none;
@@ -642,7 +663,7 @@ input:focus, select:focus, textarea:focus {
   height: 44px;
   flex: none;
   border-radius: 50%;
-  border: 2px solid rgba(243, 244, 246, 0.3);
+  border: 2px solid var(--ring);
   color: var(--ink);
   display: grid;
   place-items: center;
@@ -679,7 +700,7 @@ input:focus, select:focus, textarea:focus {
 
 .tabbar, .dock {
   flex: none;
-  background: #14181d;
+  background: var(--tabbar);
   border-top: 1px solid var(--line);
   padding-bottom: var(--safe-bottom);
 }
@@ -708,7 +729,7 @@ input:focus, select:focus, textarea:focus {
 
 .tabbar a:active { color: var(--text); }
 
-.tabbar a[aria-current="page"] { color: var(--accent); }
+.tabbar a[aria-current="page"] { color: var(--accent-text); }
 
 .dock {
   display: grid;
@@ -734,7 +755,7 @@ input:focus, select:focus, textarea:focus {
   position: absolute;
   inset: 0;
   z-index: 8;
-  background: rgba(6, 7, 9, 0.62);
+  background: var(--scrim);
   display: flex;
   align-items: flex-end;
 }
@@ -745,7 +766,7 @@ input:focus, select:focus, textarea:focus {
   overflow: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  background: #1a1d23;
+  background: var(--card);
   border-radius: 22px 22px 0 0;
   padding: 8px 16px calc(18px + var(--safe-bottom));
   border-top: 1px solid var(--line);
@@ -755,7 +776,7 @@ input:focus, select:focus, textarea:focus {
   width: 40px;
   height: 4px;
   border-radius: 99px;
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--grab);
   margin: 6px auto 14px;
 }
 
@@ -770,7 +791,7 @@ input:focus, select:focus, textarea:focus {
   padding: 0 14px;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: #12161a;
+  background: var(--field);
   color: var(--text);
   font-weight: 650;
 }
@@ -792,7 +813,7 @@ input:focus, select:focus, textarea:focus {
   padding: 12px;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: #12161a;
+  background: var(--field);
 }
 
 .lift-name {
@@ -897,7 +918,7 @@ input:focus, select:focus, textarea:focus {
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .w-top { margin: 4px 0 14px; }
@@ -930,7 +951,7 @@ input:focus, select:focus, textarea:focus {
   letter-spacing: -0.02em;
 }
 
-.w-name:focus { background: #12161a; }
+.w-name:focus { background: var(--field); }
 
 .w-prev {
   margin: -4px 0 0 8px;
@@ -967,7 +988,7 @@ input:focus, select:focus, textarea:focus {
   height: 48px;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: #12161a;
+  background: var(--field);
   color: var(--faint);
   display: grid;
   place-items: center;
@@ -978,7 +999,7 @@ input:focus, select:focus, textarea:focus {
 .w-set.done .w-check {
   background: var(--ok);
   border-color: transparent;
-  color: #0b1f14;
+  color: var(--on-ok);
 }
 
 .w-set.done .w-input {
@@ -1156,7 +1177,7 @@ input:focus, select:focus, textarea:focus {
 
 .w-row.partial .w-status { border-color: color-mix(in srgb, var(--accent) 60%, transparent); color: var(--accent); }
 
-.w-row.complete .w-status { background: var(--ok); border-color: transparent; color: #0b1f14; }
+.w-row.complete .w-status { background: var(--ok); border-color: transparent; color: var(--on-ok); }
 
 .w-row-text { min-width: 0; display: grid; gap: 2px; }
 
@@ -1258,3 +1279,141 @@ input:focus, select:focus, textarea:focus {
 .w-lift { padding: 8px 10px; gap: 5px; }
 
 .w-name::-webkit-calendar-picker-indicator { display: none !important; }
+
+/* ==========================================================================
+   Blue and White look
+   Three colors only: navy for text and outlines, blue for things you tap or
+   have done, and white. Light blue (--tint) marks where you are.
+   Colors and sizes come from the tokens in :root, so changing the look means
+   changing tokens, not these rules.
+   Selectors start with #app so they also style screens whose CSS loads later.
+   ========================================================================== */
+
+/* Cards: white, outlined, lifted off the page. */
+#app :is(.goal-card, .panel, .entry, .share-sheet, .welcome-card, .area-card, .snap div, .start-btn, .w-lift,
+         .home-card, .home-tile, .w-row,
+         .nut-tabs, .nut-facts div, .nut-list, .nut-cat, .nut-quiz, .nut-nutrient, .nut-card, .nut-total) {
+  border: var(--edge);
+  border-radius: var(--r-card);
+  box-shadow: var(--lift);
+}
+
+/* Small tiles inside cards sit lower so the page does not get noisy. */
+#app :is(.snap div, .nut-facts div) { box-shadow: var(--lift-sm); border-radius: var(--r-ctl); }
+
+/* Buttons: outlined blocks that press down when tapped. */
+#app :is(.btn, .icon-btn, .back-link, .chip, .pick, .w-check, .file-btn) {
+  border: var(--edge);
+  border-radius: var(--r-ctl);
+  box-shadow: var(--lift-sm);
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+
+#app :is(.btn, .icon-btn, .back-link, .chip, .pick, .w-check, .file-btn, .start-btn):active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+#app .btn:not(.secondary, .ghost, .danger) { min-height: 54px; font-size: 1.06rem; }
+#app .btn.secondary { background: var(--card); color: var(--text); }
+#app .btn.ghost { background: transparent; box-shadow: none; color: var(--text); }
+#app .btn.danger { background: var(--card); color: var(--danger); border-color: var(--danger); box-shadow: 2px 2px 0 var(--danger); }
+#app :is(.chip, .pick, .file-btn) { background: var(--card); color: var(--text); }
+#app .file-btn { border-style: dashed; box-shadow: none; }
+
+/* Picked or done: solid blue with white, the same everywhere. */
+#app :is(.chip, .pick, .btn.ghost, .check)[aria-pressed="true"],
+#app .check-dot[aria-pressed="true"],
+#app .nut-tabs a[aria-current="page"],
+#app .w-set.done .w-check {
+  background: var(--accent);
+  color: var(--ink);
+  border: var(--edge);
+}
+#app .btn.ghost[aria-pressed="true"] { box-shadow: var(--lift-sm); }
+#app .check-dot { border: var(--edge); background: var(--card); }
+#app .check { border: 2px dashed var(--outline); border-radius: var(--r-card); background: var(--card); }
+#app .check[aria-pressed="true"] { border-style: solid; box-shadow: var(--lift); }
+
+/* Fields. */
+#app :is(input, select, textarea) { border: var(--edge); border-radius: var(--r-ctl); background: var(--field); }
+#app :is(input, select, textarea):focus { border-color: var(--accent); box-shadow: 2px 2px 0 var(--accent); }
+
+/* Top bar: white, with the screen name large. */
+#app .topbar {
+  background: var(--card);
+  border-bottom: var(--edge);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+#app .topbar h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.04em; }
+
+/* Headings. */
+#app .hero-stat { font-weight: 700; letter-spacing: -0.04em; }
+#app :is(h2, .block-title) { font-weight: 700; }
+#app :is(.goal-card, .panel) h2 { font-size: 1.2rem; }
+#app .section-label { color: var(--accent-text); font-weight: 700; letter-spacing: 0.08em; }
+#app .mark { border: var(--edge); box-shadow: var(--lift-sm); }
+
+/* Home: big cards for Gym and Nutrition, small tiles for the rest. */
+#app .home-big { font-size: 1.8rem; font-weight: 700; }
+#app .home-card-name { color: var(--text); font-weight: 700; }
+#app :is(.home-chev, .w-chev) { color: var(--accent); }
+
+/* Icon tiles: solid blue with a white icon. */
+#app .sport {
+  border: var(--edge);
+  background: var(--accent);
+  color: var(--ink);
+}
+
+/* The big number on each screen sits on a light blue block. */
+#app .hero {
+  padding: 16px;
+  border: var(--edge);
+  border-radius: var(--r-card);
+  background: var(--tint);
+  box-shadow: var(--lift);
+}
+#app .hero :is(.kicker, .fine) { color: var(--text); }
+#app .hero .btn.ghost { background: var(--card); border: var(--edge); box-shadow: var(--lift-sm); }
+
+/* Start a workout: three solid blue buttons, the main action on Gym. */
+#app .start-btn { background: var(--accent); }
+#app .start-btn * { color: var(--ink); }
+#app .start-day { font-size: 1.5rem; }
+
+/* Progress bars. */
+#app :is(.bar, .storage) { height: 14px; border: var(--edge); background: var(--card); }
+
+/* Bottom bar: the current tab gets a light blue pill. */
+#app .tabbar { border-top: var(--edge); }
+#app .tabbar a[aria-current="page"] { color: var(--text); font-weight: 700; }
+#app .tabbar a[aria-current="page"] svg {
+  box-sizing: content-box;
+  padding: 3px 16px;
+  margin: -3px 0;
+  border-radius: 99px;
+  background: var(--tint);
+  outline: var(--edge);
+}
+
+/* Sheets and the toast. */
+#app .sheet { border: var(--edge); border-bottom: 0; }
+#app .toast { border: var(--edge); border-radius: var(--r-ctl); box-shadow: var(--lift); }
+
+/* Workout. */
+#app .w-status { border: var(--edge); }
+#app .w-row.complete .w-status { background: var(--accent); color: var(--ink); }
+#app .lift-card { border: var(--edge); border-radius: var(--r-ctl); }
+
+/* Nutrition screens. */
+#app .nut-tabs { padding: 4px; }
+#app .nut-tabs a[aria-current="page"] b { background: var(--card); color: var(--text); }
+#app .nut-cat-name { font-size: 1.3rem; font-weight: 700; }
+#app .nut-cat-go { color: var(--accent); }
+#app .nut-box { border-color: var(--outline); }
+#app .nut-price { background: var(--field); border: var(--edge); }
+#app .nut-flag { color: var(--text); background: var(--tint); border: 1.5px solid var(--outline); }
+#app .nut-flag.low { color: var(--ink); background: var(--danger); }
+#app .nut-flag.ok { color: var(--ink); background: var(--accent); }

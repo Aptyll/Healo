@@ -5,7 +5,7 @@ const AREAS = [
   {
     id: "running",
     name: "Running",
-    color: "#79b8ff",
+    color: "#2563eb",
     blurb: "Miles, minutes, and the days you got out.",
     fields: [
       { key: "miles", label: "Miles", type: "number", step: "0.1", unit: "mi" },
@@ -16,7 +16,7 @@ const AREAS = [
   {
     id: "gym",
     name: "Gym",
-    color: "#ff5c33",
+    color: "#2563eb",
     blurb: "One session: push, pull, or legs. Each lift is a few sets.",
     fields: [],
     suggest: { title: "Sessions", target: 12, unit: "sessions", mode: "count", period: "month", direction: "up" }
@@ -24,7 +24,7 @@ const AREAS = [
   {
     id: "budget",
     name: "Budget",
-    color: "#e2b15a",
+    color: "#2563eb",
     blurb: "What came in and what went out.",
     fields: [
       { key: "kind", label: "Type", type: "select", options: ["Expense", "Income"] },
@@ -45,7 +45,7 @@ const AREAS = [
   {
     id: "sleep",
     name: "Sleep",
-    color: "#b0a7ff",
+    color: "#2563eb",
     blurb: "Hours and how the night felt.",
     fields: [
       { key: "hours", label: "Hours", type: "number", step: "0.1", unit: "h" },
@@ -56,7 +56,7 @@ const AREAS = [
   {
     id: "nutrition",
     name: "Nutrition",
-    color: "#73d6a0",
+    color: "#2563eb",
     blurb: "Log what you eat. Calories and protein add up here.",
     fields: [
       { key: "meal", label: "Meal", type: "text", placeholder: "Lunch" },
@@ -68,7 +68,7 @@ const AREAS = [
   {
     id: "other",
     name: "Other",
-    color: "#a0a6b0",
+    color: "#2563eb",
     blurb: "Anything else you want to keep.",
     fields: [
       { key: "label", label: "What", type: "text", placeholder: "Pages read" },
@@ -410,7 +410,7 @@ function render() {
   const sheetEl = document.querySelector("#app .sheet");
   const keepSheetScroll = render.lastRoute === routeKey && sheetEl ? sheetEl.scrollTop : 0;
   render.lastRoute = routeKey;
-  const glow = view.area?.color || "#ff5c33";
+  const glow = view.area?.color || "#2563eb";
   document.title = view.area ? `${view.area.name} · Goals` : "Goals";
   const body = !state.profile ? renderWelcome() : view.name === "area" ? renderArea(view.area) : view.name === "me" ? renderMe() : renderHome();
   const showTabs = Boolean(state.profile);

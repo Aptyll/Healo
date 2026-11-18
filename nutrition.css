@@ -166,7 +166,7 @@
   display: grid;
   place-items: center;
   border-radius: 8px;
-  border: 2px solid rgba(243, 244, 246, 0.3);
+  border: 2px solid var(--ring);
   color: var(--ink);
 }
 
@@ -312,13 +312,13 @@
   border-radius: 99px;
   font-size: 0.8rem;
   font-weight: 650;
-  color: #e2b15a;
-  background: rgba(226, 177, 90, 0.14);
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
 }
 
 .nut-flag.low {
-  color: #ff8f73;
-  background: rgba(255, 92, 51, 0.16);
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
 }
 
 .nut-flag.ok {
@@ -470,7 +470,7 @@
   padding: 0 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #12161a;
+  background: var(--field);
   font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
@@ -485,12 +485,12 @@
   padding: 4px 14px 16px;
 }
 
-.nut-air { border-left-color: #e2b15a; }
+.nut-air { border-left-color: var(--accent-text); }
 
 .nut-air strong {
   display: block;
   margin-bottom: 2px;
-  color: #e2b15a;
+  color: var(--accent-text);
   font-size: 0.82rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
