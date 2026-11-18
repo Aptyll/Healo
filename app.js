@@ -112,7 +112,10 @@ function freshUi() {
     lightbox: "",
     logOpen: false,
     gymSession: null,
-    keepGym: false
+    keepGym: false,
+    finishOpen: false,
+    finishEnd: "",
+    confirmDiscard: false
   };
 }
 
@@ -398,10 +401,16 @@ function shareLink() {
 function render() {
   captureDraft();
   const view = route();
+  const routeKey = location.hash;
+  const mainEl = document.querySelector("#app main");
+  const keepScroll = render.lastRoute === routeKey && mainEl ? mainEl.scrollTop : 0;
+  const sheetEl = document.querySelector("#app .sheet");
+  const keepSheetScroll = render.lastRoute === routeKey && sheetEl ? sheetEl.scrollTop : 0;
+  render.lastRoute = routeKey;
   const glow = view.area?.color || "#ff5c33";
   document.title = view.area ? `${view.area.name} · Goals` : "Goals";
   const body = !state.profile ? renderWelcome() : view.name === "area" ? renderArea(view.area) : view.name === "me" ? renderMe() : renderHome();
-  const showTabs = state.profile && (view.name === "home" || view.name === "me");
+  const showTabs = Boolean(state.profile);
   const showDock = state.profile && view.name === "area" && !ui.logOpen;
   document.getElementById("app").innerHTML = `
     ${state.profile ? topbar(view) : ""}
@@ -409,12 +418,17 @@ function render() {
     ${showDock ? dock(view.area) : ""}
     ${showTabs ? tabbar(view) : ""}
     ${logSheet(view.area)}
+    ${view.area?.id === "gym" ? finishSheet() : ""}
     ${shareSheet()}
     ${lightbox()}
     <div id="toast" class="toast" hidden></div>
   `;
   document.getElementById("app").style.setProperty("--glow", glow);
   restoreDraft();
+  const nextMain = document.querySelector("#app main");
+  if (nextMain && keepScroll) nextMain.scrollTop = keepScroll;
+  const nextSheet = document.querySelector("#app .sheet");
+  if (nextSheet && keepSheetScroll) nextSheet.scrollTop = keepSheetScroll;
 }
 
 function topbar(view) {
@@ -424,13 +438,19 @@ function topbar(view) {
   return `<header class="topbar"><h1>${view.name === "me" ? "You" : "Goals"}</h1></header>`;
 }
 
+/* Areas that get their own tab and sit first on Home. */
+const TAB_AREAS = ["gym", "nutrition"];
+
 function tabbar(view) {
   const tab = (href, label, icon, on) => `<a href="${href}"${on ? ' aria-current="page"' : ""}>${icon}<span>${label}</span></a>`;
-  return `<nav class="tabbar">${tab("#/", "Home", ICONS.home, view.name === "home")}${tab("#/me", "You", ICONS.user, view.name === "me")}</nav>`;
+  const areaTabs = TAB_AREAS.map((id) => tab(`#/area/${id}`, esc(areaById(id).name), sportIcon(id), view.area?.id === id)).join("");
+  return `<nav class="tabbar" aria-label="Sections">${tab("#/", "Home", ICONS.home, view.name === "home")}${areaTabs}${tab("#/me", "You", ICONS.user, view.name === "me")}</nav>`;
 }
 
 function dock(area) {
-  const label = area.id === "gym" ? "Log session" : `Log ${area.name}`;
+  if (area.id === "gym" && active) return `<div class="dock"><button class="btn full" type="button" data-action="w-open-finish">Finish workout</button></div>`;
+  if (area.id === "gym") return `<div class="dock"><button class="btn secondary full" type="button" data-action="open-log">Log a past workout</button></div>`;
+  const label = `Log ${area.name}`;
   return `<div class="dock"><button class="btn full" type="button" data-action="open-log">${label}</button></div>`;
 }
 
@@ -448,6 +468,7 @@ function renderWelcome() {
 }
 
 function rowStat(area) {
+  if (area.id === "gym" && active) return { value: durationText(elapsedMinutes()), label: `${active.day} in progress` };
   const stat = cardStat(area);
   if (stat.hasGoal) return { value: stat.value, label: stat.label };
   const [label, value] = snapshotBits(area)[0];
@@ -458,7 +479,7 @@ function rowStat(area) {
 function renderHome() {
   const done = AREAS.filter((area) => checkedToday(area.id)).length;
   const streak = streakCount();
-  const rows = AREAS.map((area) => {
+  const row = (area) => {
     const stat = rowStat(area);
     const on = checkedToday(area.id);
     return `<div class="activity">
@@ -469,11 +490,16 @@ function renderHome() {
       </a>
       <button class="check-dot" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${on}" aria-label="${on ? "Checked in" : "Check in"} ${esc(area.name)}">${on ? ICONS.check : ""}</button>
     </div>`;
-  }).join("");
+  };
+  const focus = TAB_AREAS.map(areaById).map(row).join("");
+  const rest = AREAS.filter((area) => !TAB_AREAS.includes(area.id)).map(row).join("");
   return `<p class="kicker">${esc(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}</p>
     <h2 class="hello">${esc(state.profile.name)}</h2>
     <p class="lede">${done} of ${AREAS.length} today${streak ? ` · ${streak} day streak` : ""}</p>
-    <div class="activity-list">${rows}</div>`;
+    <p class="section-label">Focus</p>
+    <div class="activity-list">${focus}</div>
+    <p class="section-label">More</p>
+    <div class="activity-list">${rest}</div>`;
 }
 
 function heroFor(area) {
@@ -494,6 +520,7 @@ function heroFor(area) {
 }
 
 function renderArea(area) {
+  if (area.id === "gym" && active) return renderActive();
   const goal = goalFor(area.id);
   const hero = heroFor(area);
   const snaps = snapshotBits(area).map(([label, value]) => `<div><span class="fine">${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
@@ -501,13 +528,14 @@ function renderArea(area) {
   const visible = entries.filter((entry) => !isBlank(entry));
   const list = visible.length ? `<div class="feed">${visible.map(renderEntry).join("")}</div>` : `<p class="fine">${area.id === "gym" ? "Nothing logged yet. Log a push, pull, or legs session." : "Nothing logged yet. Use Log when you have a number, a note, or a photo."}</p>`;
   const on = checkedToday(area.id);
-  return `<section class="hero">
+  const top = area.id === "gym" ? renderStartPicker() : `<section class="hero">
       <p class="kicker">${esc(hero.kicker)}</p>
       <p class="hero-stat">${esc(hero.value)}</p>
       <p class="fine">${esc(hero.detail)}</p>
       ${hero.showBar ? `<div class="bar${hero.over ? " over" : ""}" style="margin-top:12px"><i style="width:${Math.round(hero.ratio * 100)}%"></i></div>` : ""}
       <button class="btn ghost" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${on}" style="margin-top:12px">${on ? "Checked in today" : "Check in today"}</button>
-    </section>
+    </section>`;
+  return `${top}
     <div class="snap">${snaps}</div>
     ${renderGoal(area, goal)}
     <p class="section-label">Recent</p>
@@ -515,10 +543,12 @@ function renderArea(area) {
 }
 
 const GYM_DAYS = {
-  Push: ["Bench press", "Overhead press", "Incline press", "Dip", "Lateral raise"],
-  Pull: ["Pull-up", "Barbell row", "Lat pulldown", "Face pull", "Curl"],
+  Push: ["Flat bench press", "Tricep push down", "Seated shoulder press", "Lateral raises", "Incline barbell press"],
+  Pull: ["Deadlift", "Lat pull downs", "Bicep curls", "Seated iso lat rows", "Face pulls"],
   Legs: ["Squat", "Romanian deadlift", "Leg press", "Lunge", "Calf raise"]
 };
+
+const ACTIVE_KEY = "goals-space-active-v1";
 
 function blankSet() {
   return { weight: "", reps: "" };
@@ -529,13 +559,19 @@ function blankLift(name = "") {
 }
 
 function blankSession() {
-  return { day: "Push", unit: "lb", lifts: [blankLift()] };
+  return { day: "Push", unit: "lb", start: "", end: "", lifts: [blankLift()] };
+}
+
+function cleanTime(value) {
+  return /^\d{2}:\d{2}$/.test(String(value || "")) ? String(value) : "";
 }
 
 function cloneSession(session) {
   return {
     day: GYM_DAYS[session?.day] ? session.day : "Push",
     unit: session?.unit === "kg" ? "kg" : "lb",
+    start: cleanTime(session?.start),
+    end: cleanTime(session?.end),
     lifts: (session?.lifts || [blankLift()]).map((lift) => ({
       name: lift.name || "",
       sets: (lift.sets?.length ? lift.sets : [blankSet(), blankSet(), blankSet()]).map((set) => ({
@@ -550,6 +586,8 @@ function readGymSession(form) {
   if (!form) return cloneSession(ui.gymSession || blankSession());
   const day = form.querySelector(".day-picks [aria-pressed='true']")?.dataset.day;
   const unit = form.querySelector(".unit-picks [aria-pressed='true']")?.dataset.unit;
+  const start = form.elements.namedItem("start")?.value || "";
+  const end = form.elements.namedItem("end")?.value || "";
   const lifts = [...form.querySelectorAll(".lift-card")].map((block) => ({
     name: block.querySelector(".lift-name")?.value || "",
     sets: [...block.querySelectorAll("[data-set]")].map((row) => ({
@@ -557,7 +595,7 @@ function readGymSession(form) {
       reps: row.querySelector(".set-reps")?.value || ""
     }))
   }));
-  return cloneSession({ day, unit, lifts: lifts.length ? lifts : [blankLift()] });
+  return cloneSession({ day, unit, start, end, lifts: lifts.length ? lifts : [blankLift()] });
 }
 
 function cleanSession(session) {
@@ -579,7 +617,8 @@ function gymMarkup(entry) {
   const session = entry.session;
   if (!session?.lifts?.length) return "";
   const lifts = session.lifts.map((lift) => `<div class="logged-lift"><p class="lift-name-log">${esc(lift.name)}</p><p class="set-line">${lift.sets.map((set) => `<span>${esc(setText(set))}</span>`).join("")}</p></div>`).join("");
-  return `<p class="feed-title">${esc(session.day)}</p><p class="fine">${esc(session.unit || "lb")}</p>${lifts}`;
+  const when = timeRange(session.start, session.end);
+  return `<p class="feed-title">${esc(session.day)}</p><p class="fine">${esc([when, session.unit || "lb"].filter(Boolean).join(" · "))}</p>${lifts}`;
 }
 
 function gymForm(draft) {
@@ -606,6 +645,10 @@ function gymForm(draft) {
   }).join("");
   return `<form id="entry-form" class="stack" data-area="gym" autocomplete="off">
     <label class="field"><span>Date</span><input type="date" name="date" max="${todayIso()}" value="${esc(draft.date || todayIso())}" required></label>
+    <div class="time-pair">
+      <label class="field"><span>Started</span><input type="time" name="start" value="${esc(session.start)}"></label>
+      <label class="field"><span>Ended</span><input type="time" name="end" value="${esc(session.end)}"></label>
+    </div>
     <div class="field"><span>Day</span><div class="day-picks">${days}</div></div>
     <div class="field"><span>Weight</span><div class="day-picks unit-picks">${units}</div></div>
     <div class="field"><span>Common lifts</span><div class="day-picks">${ideas}</div></div>
@@ -617,10 +660,378 @@ function gymForm(draft) {
       <img alt="Selected photo" id="photo-preview-img">
       <button class="btn ghost" type="button" data-action="clear-photo">Remove photo</button>
     </div>
-    <button class="btn full" type="submit">${ui.editingId ? "Save session" : "Save session"}</button>
+    <button class="btn full" type="submit">Save workout</button>
     <p class="fine">Empty sets are left out. A normal lift here is 3 sets of 6–12 reps.</p>
   </form>`;
 }
+
+function nowTime(date = new Date()) {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function clockText(time) {
+  if (!cleanTime(time)) return "";
+  const [h, m] = time.split(":").map(Number);
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+}
+
+function minutesBetween(start, end) {
+  if (!cleanTime(start) || !cleanTime(end)) return null;
+  const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+  let diff = toMin(end) - toMin(start);
+  if (diff < 0) diff += 24 * 60;
+  return diff;
+}
+
+function durationText(minutes) {
+  if (minutes == null) return "";
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h} h ${m} min` : `${h} h`;
+}
+
+function timeRange(start, end) {
+  if (cleanTime(start) && cleanTime(end)) return `${clockText(start)} to ${clockText(end)} · ${durationText(minutesBetween(start, end))}`;
+  if (cleanTime(start)) return `Started ${clockText(start)}`;
+  return "";
+}
+
+/* ---------- Live workout ----------
+   A workout in progress lives in its own storage key so every keystroke can
+   be saved cheaply and nothing is lost if the phone locks or the tab reloads. */
+
+let active = loadActive();
+
+function loadActive() {
+  try {
+    const raw = localStorage.getItem(ACTIVE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !data.startedAt) return null;
+    return { ...cloneSession(data), startedAt: String(data.startedAt), date: /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : todayIso(new Date(data.startedAt)) };
+  } catch {
+    return null;
+  }
+}
+
+function saveActive() {
+  try {
+    if (active) localStorage.setItem(ACTIVE_KEY, JSON.stringify(active));
+    else localStorage.removeItem(ACTIVE_KEY);
+    return true;
+  } catch {
+    toast("Could not save on this phone. Allow site storage and try again.");
+    return false;
+  }
+}
+
+function gymSessions() {
+  return entriesFor("gym")
+    .filter((entry) => entry.session?.lifts?.length)
+    .sort((a, b) => (b.date + (b.session.start || "") + b.createdAt).localeCompare(a.date + (a.session.start || "") + a.createdAt));
+}
+
+function lastSessionOf(day) {
+  return gymSessions().find((entry) => entry.session.day === day) || null;
+}
+
+/* Exercises from the last two sessions of this day, newest order first, so one
+   skipped exercise does not drop out of next week's list. */
+function templateNames(day) {
+  const recent = gymSessions().filter((entry) => entry.session.day === day).slice(0, 2);
+  if (!recent.length) return [...GYM_DAYS[day]];
+  const seen = new Set();
+  const names = [];
+  recent.forEach((entry) => entry.session.lifts.forEach((lift) => {
+    const key = lift.name.trim().toLowerCase();
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      names.push(lift.name.trim());
+    }
+  }));
+  return names;
+}
+
+function lastLiftSets(name) {
+  const key = name.trim().toLowerCase();
+  if (!key) return [];
+  for (const entry of gymSessions()) {
+    const lift = entry.session.lifts.find((item) => item.name.trim().toLowerCase() === key);
+    if (lift?.sets?.length) return lift.sets;
+  }
+  return [];
+}
+
+function knownLiftNames() {
+  const names = new Map();
+  gymSessions().forEach((entry) => entry.session.lifts.forEach((lift) => {
+    const key = lift.name.trim().toLowerCase();
+    if (key && !names.has(key)) names.set(key, lift.name.trim());
+  }));
+  Object.values(GYM_DAYS).flat().forEach((name) => {
+    if (!names.has(name.toLowerCase())) names.set(name.toLowerCase(), name);
+  });
+  return [...names.values()];
+}
+
+function startWorkout(day) {
+  const last = lastSessionOf(day);
+  const names = templateNames(day);
+  const now = new Date();
+  active = {
+    day,
+    unit: last?.session.unit === "kg" ? "kg" : "lb",
+    start: nowTime(now),
+    end: "",
+    startedAt: now.toISOString(),
+    date: todayIso(now),
+    lifts: names.map((name) => {
+      const count = Math.max(lastLiftSets(name).length, 3);
+      return { name, sets: Array.from({ length: count }, blankSet) };
+    })
+  };
+  if (!saveActive()) {
+    active = null;
+    return;
+  }
+  ui.finishOpen = false;
+  ui.confirmDiscard = false;
+  render({ keepDraft: false });
+}
+
+/* What to suggest for a set: the same set last time, else the set above it now. */
+function suggestion(liftIndex, setIndex) {
+  const lift = active?.lifts[liftIndex];
+  if (!lift) return blankSet();
+  const prev = lastLiftSets(lift.name);
+  if (prev.length) {
+    const pick = prev[setIndex] || prev[prev.length - 1];
+    return { weight: String(pick.weight || ""), reps: String(pick.reps || "") };
+  }
+  for (let i = setIndex - 1; i >= 0; i -= 1) {
+    const above = lift.sets[i];
+    if (above.weight || above.reps) return { weight: above.weight, reps: above.reps };
+  }
+  return blankSet();
+}
+
+function elapsedMinutes() {
+  if (!active) return 0;
+  return Math.max(0, Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 60000));
+}
+
+function setDone(set) {
+  return String(set.reps).trim() !== "";
+}
+
+function renderStartPicker() {
+  const buttons = Object.keys(GYM_DAYS).map((day) => {
+    const last = lastSessionOf(day);
+    return `<button class="start-btn" type="button" data-action="w-start" data-day="${day}">
+      <span class="start-day">${day}</span>
+      <span class="fine">${last ? `Last ${esc(parseDate(last.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }))}` : "First one"}</span>
+    </button>`;
+  }).join("");
+  return `<section class="start-card">
+    <p class="kicker">Start a workout</p>
+    <div class="start-grid">${buttons}</div>
+    <p class="fine">Starts the clock now and loads your exercises from last time.</p>
+  </section>`;
+}
+
+function renderActive() {
+  const total = active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0);
+  const lifts = active.lifts.map((lift, liftIndex) => {
+    const prev = lastLiftSets(lift.name);
+    const prevText = prev.length ? `Last: ${prev.map(setText).join(", ")}` : "No history yet";
+    const rows = lift.sets.map((set, setIndex) => {
+      const hint = suggestion(liftIndex, setIndex);
+      const done = setDone(set);
+      return `<div class="w-set${done ? " done" : ""}" data-w-row data-lift="${liftIndex}" data-set="${setIndex}">
+        <span class="set-num">${setIndex + 1}</span>
+        <input class="w-input" data-field="weight" type="number" inputmode="decimal" min="0" step="0.5" placeholder="${esc(hint.weight || active.unit)}" aria-label="${esc(lift.name || "Exercise")} set ${setIndex + 1} weight" value="${esc(set.weight)}">
+        <input class="w-input" data-field="reps" type="number" inputmode="numeric" min="0" step="1" placeholder="${esc(hint.reps || "reps")}" aria-label="${esc(lift.name || "Exercise")} set ${setIndex + 1} reps" value="${esc(set.reps)}">
+        <button class="w-check" type="button" data-action="w-fill" data-lift="${liftIndex}" data-set="${setIndex}" aria-label="${done ? "Clear" : "Same as hint for"} set ${setIndex + 1}" aria-pressed="${done}">${ICONS.check}</button>
+      </div>`;
+    }).join("");
+    return `<section class="w-lift">
+      <div class="w-lift-head">
+        <input class="w-name" data-lift="${liftIndex}" type="text" maxlength="40" list="lift-names" placeholder="Exercise name" aria-label="Exercise name" value="${esc(lift.name)}">
+        <button class="icon-x" type="button" data-action="w-remove-lift" data-lift="${liftIndex}" aria-label="Remove ${esc(lift.name || "exercise")}">×</button>
+      </div>
+      <p class="fine w-prev">${esc(prevText)}</p>
+      <div class="w-head"><span></span><span>${esc(active.unit)}</span><span>Reps</span><span></span></div>
+      ${rows}
+      <div class="w-set-actions">
+        <button class="btn ghost" type="button" data-action="w-add-set" data-lift="${liftIndex}">+ Set</button>
+        ${lift.sets.length > 1 ? `<button class="btn ghost" type="button" data-action="w-remove-set" data-lift="${liftIndex}">− Set</button>` : ""}
+      </div>
+    </section>`;
+  }).join("");
+  const inSession = new Set(active.lifts.map((lift) => lift.name.trim().toLowerCase()));
+  const ideas = GYM_DAYS[active.day].filter((name) => !inSession.has(name.toLowerCase()))
+    .map((name) => `<button class="pick idea" type="button" data-action="w-add-lift" data-name="${esc(name)}">+ ${esc(name)}</button>`).join("");
+  const options = knownLiftNames().map((name) => `<option value="${esc(name)}"></option>`).join("");
+  return `<section class="w-top">
+      <div>
+        <p class="kicker">${esc(active.day)} · started ${esc(clockText(active.start))}</p>
+        <p class="hero-stat"><span data-elapsed>${esc(durationText(elapsedMinutes()))}</span></p>
+        <p class="fine"><span data-set-count>${total}</span> ${total === 1 ? "set" : "sets"} logged · type reps, or tap ✓ to repeat last time</p>
+      </div>
+    </section>
+    <datalist id="lift-names">${options}</datalist>
+    <div class="w-list">${lifts}</div>
+    <div class="day-picks" style="margin-top:12px">${ideas}<button class="pick" type="button" data-action="w-add-lift" data-name="">+ Other exercise</button></div>
+    <div style="margin-top:22px">
+      ${ui.confirmDiscard
+        ? `<div class="actions"><button class="btn danger" type="button" data-action="w-discard">Yes, throw it away</button><button class="btn ghost" type="button" data-action="w-keep">Keep it</button></div>`
+        : `<button class="btn ghost" type="button" data-action="w-ask-discard">Discard workout</button>`}
+    </div>`;
+}
+
+function finishSheet() {
+  if (!ui.finishOpen || !active) return "";
+  const end = ui.finishEnd || nowTime();
+  return `<div class="sheet-back" data-action="w-close-finish">
+    <section class="sheet" data-action="hold" role="dialog" aria-label="Finish workout">
+      <div class="sheet-grab"></div>
+      <h2 class="block-title">Finish ${esc(active.day)}</h2>
+      <form id="finish-form" class="stack" autocomplete="off">
+        <div class="time-pair">
+          <label class="field"><span>Started</span><input type="time" name="start" value="${esc(active.start)}" required></label>
+          <label class="field"><span>Ended</span><input type="time" name="end" value="${esc(end)}" required></label>
+        </div>
+        <label class="field"><span>Note</span><textarea name="note" maxlength="2000" placeholder="How did it feel? (optional)"></textarea></label>
+        <button class="btn full" type="submit">Save workout</button>
+        <button class="btn ghost full" type="button" data-action="w-close-finish">Keep going</button>
+      </form>
+    </section>
+  </div>`;
+}
+
+function finishWorkout(form) {
+  const data = Object.fromEntries(new FormData(form).entries());
+  const session = cleanSession({ ...active, start: data.start, end: data.end });
+  session.lifts = session.lifts.map((lift) => ({ ...lift, sets: lift.sets.filter(setDone) })).filter((lift) => lift.sets.length);
+  if (!session.lifts.length) {
+    toast("Log reps for at least one set first.");
+    return;
+  }
+  const date = active.date;
+  const note = String(data.note || "").trim();
+  const ok = mutate(() => {
+    state.entries = state.entries.filter((entry) => !(entry.area === "gym" && entry.date === date && isBlank(entry)));
+    state.entries.unshift({
+      id: uid(),
+      area: "gym",
+      date,
+      checked: true,
+      note,
+      fields: { day: session.day },
+      session,
+      photo: "",
+      createdAt: new Date().toISOString()
+    });
+  });
+  if (!ok) return;
+  active = null;
+  saveActive();
+  ui.finishOpen = false;
+  ui.finishEnd = "";
+  render({ keepDraft: false });
+  toast(`Saved. ${durationText(minutesBetween(session.start, session.end))} workout.`);
+}
+
+function onWorkoutInput(target) {
+  if (!active) return;
+  if (target.classList.contains("w-name")) {
+    const lift = active.lifts[Number(target.dataset.lift)];
+    if (lift) lift.name = target.value;
+    saveActive();
+    return;
+  }
+  const row = target.closest("[data-w-row]");
+  if (!row) return;
+  const liftIndex = Number(row.dataset.lift);
+  const setIndex = Number(row.dataset.set);
+  const set = active.lifts[liftIndex]?.sets[setIndex];
+  if (!set) return;
+  set[target.dataset.field] = target.value;
+  // Typing reps on a row with no weight uses the suggested weight, so a repeat set is just the reps.
+  if (target.dataset.field === "reps" && target.value && !set.weight) {
+    const hint = suggestion(liftIndex, setIndex);
+    if (hint.weight) {
+      set.weight = hint.weight;
+      const weightInput = row.querySelector("[data-field='weight']");
+      if (weightInput) weightInput.value = hint.weight;
+    }
+  }
+  const done = setDone(set);
+  row.classList.toggle("done", done);
+  row.querySelector(".w-check")?.setAttribute("aria-pressed", String(done));
+  const counter = document.querySelector("[data-set-count]");
+  if (counter) counter.textContent = String(active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0));
+  saveActive();
+}
+
+function onWorkoutAction(action, button) {
+  const liftIndex = Number(button.dataset.lift);
+  const lift = active?.lifts[liftIndex];
+  if (action === "w-start") return startWorkout(button.dataset.day);
+  if (!active) return;
+  if (action === "w-fill" && lift) {
+    const setIndex = Number(button.dataset.set);
+    const set = lift.sets[setIndex];
+    if (setDone(set)) {
+      set.reps = "";
+    } else {
+      const hint = suggestion(liftIndex, setIndex);
+      if (!hint.reps && !set.reps) {
+        toast("Type the reps for this set.");
+        document.querySelector(`[data-w-row][data-lift="${liftIndex}"][data-set="${setIndex}"] [data-field="reps"]`)?.focus();
+        return;
+      }
+      set.weight = set.weight || hint.weight;
+      set.reps = hint.reps;
+    }
+  }
+  if (action === "w-add-set" && lift) lift.sets.push(blankSet());
+  if (action === "w-remove-set" && lift && lift.sets.length > 1) lift.sets.pop();
+  if (action === "w-remove-lift" && lift) active.lifts.splice(liftIndex, 1);
+  if (action === "w-add-lift") {
+    const name = button.dataset.name || "";
+    const count = Math.max(lastLiftSets(name).length, 3);
+    active.lifts.push({ name, sets: Array.from({ length: count }, blankSet) });
+  }
+  if (action === "w-ask-discard") ui.confirmDiscard = true;
+  if (action === "w-keep") ui.confirmDiscard = false;
+  if (action === "w-discard") {
+    active = null;
+    ui.confirmDiscard = false;
+    saveActive();
+    render({ keepDraft: false });
+    toast("Workout discarded.");
+    return;
+  }
+  if (action === "w-open-finish") {
+    ui.finishOpen = true;
+    ui.finishEnd = nowTime();
+  }
+  if (action === "w-close-finish") ui.finishOpen = false;
+  saveActive();
+  render({ keepDraft: false });
+  if (action === "w-add-lift" && !button.dataset.name) {
+    const inputs = document.querySelectorAll(".w-name");
+    inputs[inputs.length - 1]?.focus();
+  }
+}
+
+setInterval(() => {
+  const el = document.querySelector("[data-elapsed]");
+  if (el && active) el.textContent = durationText(elapsedMinutes());
+}, 15000);
 
 function entryForm(area) {
   const editing = entriesFor(area.id).find((entry) => entry.id === ui.editingId);
@@ -646,7 +1057,7 @@ function logSheet(area) {
   return `<div class="sheet-back" data-action="close-log">
     <section class="sheet" data-sheet data-action="hold" role="dialog" aria-label="${ui.editingId ? "Edit entry" : "Log"}">
       <div class="sheet-grab"></div>
-      <h2 class="block-title">${area.id === "gym" ? (ui.editingId ? "Edit session" : "Log session") : `${ui.editingId ? "Edit" : "Log"} ${esc(area.name)}`}</h2>
+      <h2 class="block-title">${area.id === "gym" ? (ui.editingId ? "Edit workout" : "Log a past workout") : `${ui.editingId ? "Edit" : "Log"} ${esc(area.name)}`}</h2>
       ${entryForm(area)}
     </section>
   </div>`;
@@ -1091,6 +1502,10 @@ document.addEventListener("click", (event) => {
   if (button.dataset.action === "close-lightbox" && event.target.tagName === "IMG") return;
   if (button.dataset.action === "hold") return;
   const action = button.dataset.action;
+  if (action.startsWith("w-")) {
+    onWorkoutAction(action, button);
+    return;
+  }
   const areaId = button.dataset.area || route().area?.id;
 
   if (action === "open-log") {
@@ -1259,6 +1674,8 @@ document.addEventListener("click", (event) => {
   if (action === "confirm-clear") {
     applySnapshot(blank());
     localStorage.removeItem(STORAGE_KEY);
+    active = null;
+    saveActive();
     ui = freshUi();
     location.hash = "";
     render({ keepDraft: false });
@@ -1281,11 +1698,19 @@ document.addEventListener("submit", (event) => {
     const area = areaById(form.dataset.area);
     if (area) saveEntry(area, form);
   }
+  if (form.id === "finish-form") {
+    event.preventDefault();
+    if (active) finishWorkout(form);
+  }
   if (form.id === "goal-form") {
     event.preventDefault();
     const area = route().area;
     if (area) saveGoal(area, form);
   }
+});
+
+document.addEventListener("input", (event) => {
+  if (event.target.closest?.(".w-list")) onWorkoutInput(event.target);
 });
 
 document.addEventListener("change", (event) => {
@@ -1303,6 +1728,8 @@ window.addEventListener("hashchange", () => {
   ui.lightbox = "";
   ui.logOpen = false;
   ui.gymSession = null;
+  ui.finishOpen = false;
+  ui.confirmDiscard = false;
   render({ keepDraft: false });
 });
 
