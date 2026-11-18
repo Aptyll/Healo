@@ -993,3 +993,119 @@ input:focus, select:focus, textarea:focus {
 }
 
 .w-set-actions .btn { flex: 1; }
+
+
+/* ---------- Home, ordered by priority ----------
+   Two large cards (Gym, then Nutrition) each with one main action, then the
+   smaller goals as compact tiles. Colours come from the theme variables. */
+
+.home-date {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.home-card + .section-label { margin-top: 16px; }
+
+.home-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 4px 16px 16px;
+  margin-bottom: 10px;
+}
+
+.home-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+}
+
+.home-card-head .sport {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.home-card-head .sport svg { width: 18px; height: 18px; }
+
+.home-card-name {
+  flex: 1;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.home-chev, .home-quiet svg {
+  width: 20px;
+  height: 20px;
+  color: var(--faint);
+}
+
+.home-chev svg { width: 20px; height: 20px; display: block; }
+
+.home-big {
+  margin: 2px 0 4px;
+  font-size: 1.6rem;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-weight: 650;
+}
+
+.home-card .fine { margin: 0 0 12px; }
+
+.home-card .bar { margin: -4px 0 14px; }
+
+.home-alt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.home-alt .fine { margin: 0 4px 0 0; }
+
+.home-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.home-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 112px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.home-tile .sport {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.home-tile .sport svg { width: 18px; height: 18px; }
+
+.home-tile-name {
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.home-tile .fine { font-size: 0.82rem; }
+
+.home-tile:active, .home-card-head:active { opacity: 0.7; }
+
+.home-quiet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  margin-top: 10px;
+  padding: 0 4px;
+  color: var(--muted);
+}

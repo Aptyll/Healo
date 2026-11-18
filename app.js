@@ -83,6 +83,7 @@ const ICONS = {
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 19.2c1.4-2.6 3.6-3.7 6.5-3.7s5.1 1.1 6.5 3.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  forward: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L19 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 
@@ -435,11 +436,14 @@ function topbar(view) {
   if (view.name === "area") {
     return `<header class="topbar"><a class="back-link" href="#/" aria-label="Back">${ICONS.back}</a><h1>${esc(view.area.name)}</h1></header>`;
   }
-  return `<header class="topbar"><h1>${view.name === "me" ? "You" : "Goals"}</h1></header>`;
+  return `<header class="topbar"><h1>${view.name === "me" ? "You" : "Today"}</h1></header>`;
 }
 
-/* Areas that get their own tab and sit first on Home. */
+/* Home is ordered by priority. TAB_AREAS get a tab and a large card with one
+   main action. HOME_GOALS are the smaller goals, shown as compact tiles in this
+   order. Any other area sits in a quiet row at the bottom. */
 const TAB_AREAS = ["gym", "nutrition"];
+const HOME_GOALS = ["sleep", "budget", "running"];
 
 function tabbar(view) {
   const tab = (href, label, icon, on) => `<a href="${href}"${on ? ' aria-current="page"' : ""}>${icon}<span>${label}</span></a>`;
@@ -476,30 +480,102 @@ function rowStat(area) {
   return { value: empty ? "" : value, label: empty ? "Nothing logged" : label };
 }
 
+function nextGymDay() {
+  const order = Object.keys(GYM_DAYS);
+  const last = gymSessions()[0];
+  if (!last) return order[0];
+  return order[(order.indexOf(last.session.day) + 1) % order.length];
+}
+
+function homeCard(area, body) {
+  return `<section class="home-card" style="--area:${area.color}">
+    <a class="home-card-head" href="#/area/${area.id}">
+      <span class="sport">${sportIcon(area.id)}</span>
+      <span class="home-card-name">${esc(area.name)}</span>
+      <span class="home-chev">${ICONS.forward}</span>
+    </a>
+    ${body}
+  </section>`;
+}
+
+function homeGym(area) {
+  if (active) {
+    const sets = active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0);
+    return homeCard(area, `<p class="home-big">${esc(active.day)} in progress</p>
+      <p class="fine">${esc(durationText(elapsedMinutes()))} so far · ${sets} ${sets === 1 ? "set" : "sets"} logged</p>
+      <a class="btn full" href="#/area/gym">Continue workout</a>`);
+  }
+  const sessions = gymSessions();
+  const today = sessions.find((entry) => entry.date === todayIso());
+  const month = sessions.filter((entry) => inPeriod(entry.date, "month")).length;
+  const monthText = `${month} ${month === 1 ? "workout" : "workouts"} this month`;
+  if (today) {
+    const length = durationText(minutesBetween(today.session.start, today.session.end));
+    return homeCard(area, `<p class="home-big">${esc(today.session.day)} done today</p>
+      <p class="fine">${esc([length, monthText].filter(Boolean).join(" · "))}</p>
+      <a class="btn secondary full" href="#/area/gym">See workout</a>`);
+  }
+  const next = nextGymDay();
+  const last = sessions[0];
+  const others = Object.keys(GYM_DAYS).filter((day) => day !== next)
+    .map((day) => `<button class="pick" type="button" data-action="home-start" data-day="${day}">${day}</button>`).join("");
+  return homeCard(area, `<p class="home-big">${last ? `Next up: ${next}` : "Start your first workout"}</p>
+    <p class="fine">${last ? `${esc(monthText)} · last was ${esc(last.session.day)}, ${esc(formatDay(last.date))}` : "Starts a clock and lists your exercises. Tap a set when you finish it."}</p>
+    <button class="btn full" type="button" data-action="home-start" data-day="${next}">Start ${next}</button>
+    <div class="home-alt"><span class="fine">Or start</span>${others}</div>`);
+}
+
+function homeFood(area, primary) {
+  const goal = goalFor(area.id);
+  const today = entriesFor(area.id).filter((entry) => entry.date === todayIso() && !isBlank(entry));
+  const calories = today.reduce((sum, entry) => sum + (numberFrom(entry, "calories") || 0), 0);
+  const meals = `${today.length} ${today.length === 1 ? "meal" : "meals"} logged today`;
+  let big = today.length ? formatNum(calories, "cal") : "Nothing logged today";
+  let detail = today.length ? meals : "Log what you eat and the calories add up here.";
+  let bar = "";
+  if (goal) {
+    const current = measure(goal);
+    const over = goal.direction === "cap" && current > goal.target;
+    big = formatNum(current, goal.unit);
+    detail = `${progressText(goal, current)} · ${goal.title}`;
+    bar = `<div class="bar${over ? " over" : ""}"><i style="width:${Math.round((goal.target ? Math.min(current / goal.target, 1) : 0) * 100)}%"></i></div>`;
+  }
+  return homeCard(area, `<p class="home-big">${esc(big)}</p>
+    <p class="fine">${esc(detail)}</p>
+    ${bar}
+    <button class="btn${primary ? "" : " secondary"} full" type="button" data-action="home-log" data-area="${area.id}">Log a meal</button>`);
+}
+
+function homeBigCard(area, primary) {
+  if (area.id === "gym") return homeGym(area);
+  if (area.id === "nutrition") return homeFood(area, primary);
+  const stat = rowStat(area);
+  return homeCard(area, `<p class="home-big">${esc(stat.value || stat.label)}</p>
+    <p class="fine">${esc(stat.value ? stat.label : area.blurb)}</p>
+    <button class="btn${primary ? "" : " secondary"} full" type="button" data-action="home-log" data-area="${area.id}">Log ${esc(area.name)}</button>`);
+}
+
 function renderHome() {
-  const done = AREAS.filter((area) => checkedToday(area.id)).length;
   const streak = streakCount();
-  const row = (area) => {
+  const date = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  // One filled button at a time: the gym until today's workout is saved, then food.
+  const gymOwnsScreen = TAB_AREAS.includes("gym") && (active || !gymSessions().some((entry) => entry.date === todayIso()));
+  const cards = TAB_AREAS.map(areaById).map((area) => homeBigCard(area, !gymOwnsScreen)).join("");
+  const tiles = HOME_GOALS.map(areaById).map((area) => {
     const stat = rowStat(area);
-    const on = checkedToday(area.id);
-    return `<div class="activity">
-      <a class="activity-main" href="#/area/${area.id}">
-        <span class="sport" style="--area:${area.color}">${sportIcon(area.id)}</span>
-        <span><span class="activity-name">${esc(area.name)}</span><span class="fine">${esc(stat.label)}</span></span>
-        <span class="activity-stat">${esc(stat.value)}</span>
-      </a>
-      <button class="check-dot" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${on}" aria-label="${on ? "Checked in" : "Check in"} ${esc(area.name)}">${on ? ICONS.check : ""}</button>
-    </div>`;
-  };
-  const focus = TAB_AREAS.map(areaById).map(row).join("");
-  const rest = AREAS.filter((area) => !TAB_AREAS.includes(area.id)).map(row).join("");
-  return `<p class="kicker">${esc(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}</p>
-    <h2 class="hello">${esc(state.profile.name)}</h2>
-    <p class="lede">${done} of ${AREAS.length} today${streak ? ` · ${streak} day streak` : ""}</p>
-    <p class="section-label">Focus</p>
-    <div class="activity-list">${focus}</div>
-    <p class="section-label">More</p>
-    <div class="activity-list">${rest}</div>`;
+    return `<a class="home-tile" href="#/area/${area.id}" style="--area:${area.color}">
+      <span class="sport">${sportIcon(area.id)}</span>
+      <span class="home-tile-name">${esc(area.name)}</span>
+      <span class="fine">${esc(stat.value || "Not started")}</span>
+    </a>`;
+  }).join("");
+  const rest = AREAS.filter((area) => !TAB_AREAS.includes(area.id) && !HOME_GOALS.includes(area.id))
+    .map((area) => `<a class="home-quiet" href="#/area/${area.id}"><span>${area.id === "other" ? "Track something else" : esc(area.name)}</span>${ICONS.forward}</a>`).join("");
+  return `<p class="home-date">${esc(date)}${streak ? ` · ${streak} day streak` : ""}</p>
+    ${cards}
+    <p class="section-label">Other goals</p>
+    <div class="home-tiles">${tiles}</div>
+    ${rest}`;
 }
 
 function heroFor(area) {
@@ -1484,6 +1560,9 @@ async function shareSite() {
 
 let captureEnabled = true;
 
+/* Set by a Home button that should land on an area with its log sheet open. */
+let openLogOnArrival = "";
+
 const renderBase = render;
 render = function patchedRender(options = {}) {
   const keep = options.keepDraft !== false;
@@ -1547,6 +1626,14 @@ document.addEventListener("click", (event) => {
     ui.gymSession = session;
     ui.keepGym = true;
     render({ keepDraft: true });
+  }
+  if (action === "home-start") {
+    startWorkout(button.dataset.day);
+    if (active) location.hash = "#/area/gym";
+  }
+  if (action === "home-log" && areaById(areaId)) {
+    openLogOnArrival = areaId;
+    location.hash = `#/area/${areaId}`;
   }
   if (action === "toggle-today") toggleToday(areaId);
   if (action === "share") shareSite();
@@ -1730,6 +1817,8 @@ window.addEventListener("hashchange", () => {
   ui.gymSession = null;
   ui.finishOpen = false;
   ui.confirmDiscard = false;
+  if (openLogOnArrival && route().area?.id === openLogOnArrival) ui.logOpen = true;
+  openLogOnArrival = "";
   render({ keepDraft: false });
 });
 
