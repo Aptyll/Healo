@@ -57,7 +57,7 @@ const AREAS = [
     id: "nutrition",
     name: "Nutrition",
     color: "#73d6a0",
-    blurb: "What you ate, meals to cook, and a grocery list.",
+    blurb: "Log what you eat. Calories and protein add up here.",
     fields: [
       { key: "meal", label: "Meal", type: "text", placeholder: "Lunch" },
       { key: "calories", label: "Calories", type: "number", step: "1", unit: "cal" },
