@@ -414,7 +414,7 @@ function render() {
   document.title = view.area ? `${view.area.name} · Goals` : "Goals";
   const body = !state.profile ? renderWelcome() : view.name === "area" ? renderArea(view.area) : view.name === "me" ? renderMe() : renderHome();
   const showTabs = Boolean(state.profile);
-  const showDock = state.profile && view.name === "area" && !ui.logOpen;
+  const showDock = state.profile && view.name === "area" && !ui.logOpen && !window.Goals?.has(view.area.id);
   document.getElementById("app").innerHTML = `
     ${state.profile ? topbar(view) : ""}
     <main>${body}</main>
@@ -479,6 +479,7 @@ function renderWelcome() {
 
 function rowStat(area) {
   if (area.id === "gym" && active) return { value: durationText(elapsedMinutes()), label: `${active.day} in progress` };
+  if (window.Goals?.has(area.id)) return window.Goals.stat(area);
   const stat = cardStat(area);
   if (stat.hasGoal) return { value: stat.value, label: stat.label };
   const [label, value] = snapshotBits(area)[0];
@@ -603,6 +604,7 @@ function heroFor(area) {
 
 function renderArea(area) {
   if (area.id === "gym" && active) return renderActive();
+  if (window.Goals?.has(area.id)) return window.Goals.page(area);
   const goal = goalFor(area.id);
   const hero = heroFor(area);
   const snaps = snapshotBits(area).map(([label, value]) => `<div><span class="fine">${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
