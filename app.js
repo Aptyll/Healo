@@ -5,7 +5,7 @@ const AREAS = [
   {
     id: "running",
     name: "Running",
-    color: "#2a6fd6",
+    color: "#2563eb",
     blurb: "Miles, minutes, and the days you got out.",
     fields: [
       { key: "miles", label: "Miles", type: "number", step: "0.1", unit: "mi" },
@@ -16,7 +16,7 @@ const AREAS = [
   {
     id: "gym",
     name: "Gym",
-    color: "#d9480f",
+    color: "#2563eb",
     blurb: "One session: push, pull, or legs. Each lift is a few sets.",
     fields: [],
     suggest: { title: "Sessions", target: 12, unit: "sessions", mode: "count", period: "month", direction: "up" }
@@ -24,7 +24,7 @@ const AREAS = [
   {
     id: "budget",
     name: "Budget",
-    color: "#a16207",
+    color: "#2563eb",
     blurb: "What came in and what went out.",
     fields: [
       { key: "kind", label: "Type", type: "select", options: ["Expense", "Income"] },
@@ -45,7 +45,7 @@ const AREAS = [
   {
     id: "sleep",
     name: "Sleep",
-    color: "#6d5ce7",
+    color: "#2563eb",
     blurb: "Hours and how the night felt.",
     fields: [
       { key: "hours", label: "Hours", type: "number", step: "0.1", unit: "h" },
@@ -56,18 +56,19 @@ const AREAS = [
   {
     id: "nutrition",
     name: "Nutrition",
-    color: "#12824f",
-    blurb: "Meals, calories, and a note if you want one.",
+    color: "#2563eb",
+    blurb: "Log what you eat. Calories and protein add up here.",
     fields: [
       { key: "meal", label: "Meal", type: "text", placeholder: "Lunch" },
-      { key: "calories", label: "Calories", type: "number", step: "1", unit: "cal" }
+      { key: "calories", label: "Calories", type: "number", step: "1", unit: "cal" },
+      { key: "protein", label: "Protein", type: "number", step: "1", unit: "g" }
     ],
     suggest: { title: "Calories today", target: 2200, unit: "cal", mode: "sum", metric: "calories", period: "day", direction: "cap" }
   },
   {
     id: "other",
     name: "Other",
-    color: "#6b7280",
+    color: "#2563eb",
     blurb: "Anything else you want to keep.",
     fields: [
       { key: "label", label: "What", type: "text", placeholder: "Pages read" },
@@ -83,6 +84,7 @@ const ICONS = {
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 19.2c1.4-2.6 3.6-3.7 6.5-3.7s5.1 1.1 6.5 3.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  forward: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L19 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 
@@ -367,7 +369,8 @@ function snapshotBits(area) {
   if (area.id === "nutrition") {
     const today = list.filter((entry) => entry.date === todayIso());
     const calories = today.reduce((sum, entry) => sum + (numberFrom(entry, "calories") || 0), 0);
-    return [["Today", formatNum(calories, "cal")], ["Meals", String(today.length)]];
+    const protein = today.reduce((sum, entry) => sum + (numberFrom(entry, "protein") || 0), 0);
+    return [["Today", formatNum(calories, "cal")], ["Protein today", formatNum(protein, "g")]];
   }
   return [["Entries", String(list.length)], ["Checked days", String(new Set(list.filter((entry) => entry.checked).map((entry) => entry.date)).size)]];
 }
@@ -407,11 +410,11 @@ function render() {
   const sheetEl = document.querySelector("#app .sheet");
   const keepSheetScroll = render.lastRoute === routeKey && sheetEl ? sheetEl.scrollTop : 0;
   render.lastRoute = routeKey;
-  const glow = view.area?.color || "#2f6bff";
+  const glow = view.area?.color || "#2563eb";
   document.title = view.area ? `${view.area.name} · Goals` : "Goals";
   const body = !state.profile ? renderWelcome() : view.name === "area" ? renderArea(view.area) : view.name === "me" ? renderMe() : renderHome();
   const showTabs = Boolean(state.profile);
-  const showDock = state.profile && view.name === "area" && !ui.logOpen;
+  const showDock = state.profile && view.name === "area" && !ui.logOpen && !window.Goals?.has(view.area.id);
   document.getElementById("app").innerHTML = `
     ${state.profile ? topbar(view) : ""}
     <main>${body}</main>
@@ -432,14 +435,21 @@ function render() {
 }
 
 function topbar(view) {
+  if (view.name === "area" && view.area.id === "gym" && active) {
+    // During a workout the bar doubles as the clock and holds Finish, so the exercises get the screen.
+    return `<header class="topbar"><a class="back-link" href="#/" aria-label="Back">${ICONS.back}</a><h1 class="w-clock">${esc(active.day)} · <span data-elapsed>${esc(durationText(elapsedMinutes()))}</span></h1><button class="btn top-finish" type="button" data-action="w-open-finish">Finish</button></header>`;
+  }
   if (view.name === "area") {
     return `<header class="topbar"><a class="back-link" href="#/" aria-label="Back">${ICONS.back}</a><h1>${esc(view.area.name)}</h1></header>`;
   }
-  return `<header class="topbar"><h1>${view.name === "me" ? "You" : "Goals"}</h1></header>`;
+  return `<header class="topbar"><h1>${view.name === "me" ? "You" : "Today"}</h1></header>`;
 }
 
-/* Areas that get their own tab and sit first on Home. */
+/* Home is ordered by priority. TAB_AREAS get a tab and a large card with one
+   main action. HOME_GOALS are the smaller goals, shown as compact tiles in this
+   order. Any other area sits in a quiet row at the bottom. */
 const TAB_AREAS = ["gym", "nutrition"];
+const HOME_GOALS = ["sleep", "budget", "running"];
 
 function tabbar(view) {
   const tab = (href, label, icon, on) => `<a href="${href}"${on ? ' aria-current="page"' : ""}>${icon}<span>${label}</span></a>`;
@@ -448,7 +458,7 @@ function tabbar(view) {
 }
 
 function dock(area) {
-  if (area.id === "gym" && active) return `<div class="dock"><button class="btn full" type="button" data-action="w-open-finish">Finish workout</button></div>`;
+  if (area.id === "gym" && active) return "";
   if (area.id === "gym") return `<div class="dock"><button class="btn secondary full" type="button" data-action="open-log">Log a past workout</button></div>`;
   const label = `Log ${area.name}`;
   return `<div class="dock"><button class="btn full" type="button" data-action="open-log">${label}</button></div>`;
@@ -469,6 +479,7 @@ function renderWelcome() {
 
 function rowStat(area) {
   if (area.id === "gym" && active) return { value: durationText(elapsedMinutes()), label: `${active.day} in progress` };
+  if (window.Goals?.has(area.id)) return window.Goals.stat(area);
   const stat = cardStat(area);
   if (stat.hasGoal) return { value: stat.value, label: stat.label };
   const [label, value] = snapshotBits(area)[0];
@@ -476,30 +487,102 @@ function rowStat(area) {
   return { value: empty ? "" : value, label: empty ? "Nothing logged" : label };
 }
 
+function nextGymDay() {
+  const order = Object.keys(GYM_DAYS);
+  const last = gymSessions()[0];
+  if (!last) return order[0];
+  return order[(order.indexOf(last.session.day) + 1) % order.length];
+}
+
+function homeCard(area, body) {
+  return `<section class="home-card" style="--area:${area.color}">
+    <a class="home-card-head" href="#/area/${area.id}">
+      <span class="sport">${sportIcon(area.id)}</span>
+      <span class="home-card-name">${esc(area.name)}</span>
+      <span class="home-chev">${ICONS.forward}</span>
+    </a>
+    ${body}
+  </section>`;
+}
+
+function homeGym(area) {
+  if (active) {
+    const sets = active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0);
+    return homeCard(area, `<p class="home-big">${esc(active.day)} in progress</p>
+      <p class="fine">${esc(durationText(elapsedMinutes()))} so far · ${sets} ${sets === 1 ? "set" : "sets"} logged</p>
+      <a class="btn full" href="#/area/gym">Continue workout</a>`);
+  }
+  const sessions = gymSessions();
+  const today = sessions.find((entry) => entry.date === todayIso());
+  const month = sessions.filter((entry) => inPeriod(entry.date, "month")).length;
+  const monthText = `${month} ${month === 1 ? "workout" : "workouts"} this month`;
+  if (today) {
+    const length = durationText(minutesBetween(today.session.start, today.session.end));
+    return homeCard(area, `<p class="home-big">${esc(today.session.day)} done today</p>
+      <p class="fine">${esc([length, monthText].filter(Boolean).join(" · "))}</p>
+      <a class="btn secondary full" href="#/area/gym">See workout</a>`);
+  }
+  const next = nextGymDay();
+  const last = sessions[0];
+  const others = Object.keys(GYM_DAYS).filter((day) => day !== next)
+    .map((day) => `<button class="pick" type="button" data-action="home-start" data-day="${day}">${day}</button>`).join("");
+  return homeCard(area, `<p class="home-big">${last ? `Next up: ${next}` : "Start your first workout"}</p>
+    <p class="fine">${last ? `${esc(monthText)} · last was ${esc(last.session.day)}, ${esc(formatDay(last.date))}` : "Starts a clock and lists your exercises. Tap a set when you finish it."}</p>
+    <button class="btn full" type="button" data-action="home-start" data-day="${next}">Start ${next}</button>
+    <div class="home-alt"><span class="fine">Or start</span>${others}</div>`);
+}
+
+function homeFood(area, primary) {
+  const goal = goalFor(area.id);
+  const today = entriesFor(area.id).filter((entry) => entry.date === todayIso() && !isBlank(entry));
+  const calories = today.reduce((sum, entry) => sum + (numberFrom(entry, "calories") || 0), 0);
+  const meals = `${today.length} ${today.length === 1 ? "meal" : "meals"} logged today`;
+  let big = today.length ? formatNum(calories, "cal") : "Nothing logged today";
+  let detail = today.length ? meals : "Log what you eat and the calories add up here.";
+  let bar = "";
+  if (goal) {
+    const current = measure(goal);
+    const over = goal.direction === "cap" && current > goal.target;
+    big = formatNum(current, goal.unit);
+    detail = `${progressText(goal, current)} · ${goal.title}`;
+    bar = `<div class="bar${over ? " over" : ""}"><i style="width:${Math.round((goal.target ? Math.min(current / goal.target, 1) : 0) * 100)}%"></i></div>`;
+  }
+  return homeCard(area, `<p class="home-big">${esc(big)}</p>
+    <p class="fine">${esc(detail)}</p>
+    ${bar}
+    <button class="btn${primary ? "" : " secondary"} full" type="button" data-action="home-log" data-area="${area.id}">Log a meal</button>`);
+}
+
+function homeBigCard(area, primary) {
+  if (area.id === "gym") return homeGym(area);
+  if (area.id === "nutrition") return homeFood(area, primary);
+  const stat = rowStat(area);
+  return homeCard(area, `<p class="home-big">${esc(stat.value || stat.label)}</p>
+    <p class="fine">${esc(stat.value ? stat.label : area.blurb)}</p>
+    <button class="btn${primary ? "" : " secondary"} full" type="button" data-action="home-log" data-area="${area.id}">Log ${esc(area.name)}</button>`);
+}
+
 function renderHome() {
-  const done = AREAS.filter((area) => checkedToday(area.id)).length;
   const streak = streakCount();
-  const row = (area) => {
+  const date = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  // One filled button at a time: the gym until today's workout is saved, then food.
+  const gymOwnsScreen = TAB_AREAS.includes("gym") && (active || !gymSessions().some((entry) => entry.date === todayIso()));
+  const cards = TAB_AREAS.map(areaById).map((area) => homeBigCard(area, !gymOwnsScreen)).join("");
+  const tiles = HOME_GOALS.map(areaById).map((area) => {
     const stat = rowStat(area);
-    const on = checkedToday(area.id);
-    return `<div class="activity">
-      <a class="activity-main" href="#/area/${area.id}">
-        <span class="sport" style="--area:${area.color}">${sportIcon(area.id)}</span>
-        <span><span class="activity-name">${esc(area.name)}</span><span class="fine">${esc(stat.label)}</span></span>
-        <span class="activity-stat">${esc(stat.value)}</span>
-      </a>
-      <button class="check-dot" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${on}" aria-label="${on ? "Checked in" : "Check in"} ${esc(area.name)}">${on ? ICONS.check : ""}</button>
-    </div>`;
-  };
-  const focus = TAB_AREAS.map(areaById).map(row).join("");
-  const rest = AREAS.filter((area) => !TAB_AREAS.includes(area.id)).map(row).join("");
-  return `<p class="kicker">${esc(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}</p>
-    <h2 class="hello">${esc(state.profile.name)}</h2>
-    <p class="lede">${done} of ${AREAS.length} today${streak ? ` · ${streak} day streak` : ""}</p>
-    <p class="section-label">Focus</p>
-    <div class="activity-list">${focus}</div>
-    <p class="section-label">More</p>
-    <div class="activity-list">${rest}</div>`;
+    return `<a class="home-tile" href="#/area/${area.id}" style="--area:${area.color}">
+      <span class="sport">${sportIcon(area.id)}</span>
+      <span class="home-tile-name">${esc(area.name)}</span>
+      <span class="fine">${esc(stat.value || "Not started")}</span>
+    </a>`;
+  }).join("");
+  const rest = AREAS.filter((area) => !TAB_AREAS.includes(area.id) && !HOME_GOALS.includes(area.id))
+    .map((area) => `<a class="home-quiet" href="#/area/${area.id}"><span>${area.id === "other" ? "Track something else" : esc(area.name)}</span>${ICONS.forward}</a>`).join("");
+  return `<p class="home-date">${esc(date)}${streak ? ` · ${streak} day streak` : ""}</p>
+    ${cards}
+    <p class="section-label">Other goals</p>
+    <div class="home-tiles">${tiles}</div>
+    ${rest}`;
 }
 
 function heroFor(area) {
@@ -521,6 +604,7 @@ function heroFor(area) {
 
 function renderArea(area) {
   if (area.id === "gym" && active) return renderActive();
+  if (window.Goals?.has(area.id)) return window.Goals.page(area);
   const goal = goalFor(area.id);
   const hero = heroFor(area);
   const snaps = snapshotBits(area).map(([label, value]) => `<div><span class="fine">${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
@@ -535,11 +619,12 @@ function renderArea(area) {
       ${hero.showBar ? `<div class="bar${hero.over ? " over" : ""}" style="margin-top:12px"><i style="width:${Math.round(hero.ratio * 100)}%"></i></div>` : ""}
       <button class="btn ghost" type="button" data-action="toggle-today" data-area="${area.id}" aria-pressed="${on}" style="margin-top:12px">${on ? "Checked in today" : "Check in today"}</button>
     </section>`;
-  return `${top}
+  const page = `${top}
     <div class="snap">${snaps}</div>
     ${renderGoal(area, goal)}
     <p class="section-label">Recent</p>
     ${list}`;
+  return area.id === "nutrition" && window.Nutrition ? window.Nutrition.page(area, page) : page;
 }
 
 const GYM_DAYS = {
@@ -710,7 +795,9 @@ function loadActive() {
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!data || !data.startedAt) return null;
-    return { ...cloneSession(data), startedAt: String(data.startedAt), date: /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : todayIso(new Date(data.startedAt)) };
+    const loaded = { ...cloneSession(data), startedAt: String(data.startedAt), date: /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : todayIso(new Date(data.startedAt)) };
+    loaded.open = Number.isInteger(data.open) ? data.open : firstOpenLift(loaded);
+    return loaded;
   } catch {
     return null;
   }
@@ -787,6 +874,7 @@ function startWorkout(day) {
     end: "",
     startedAt: now.toISOString(),
     date: todayIso(now),
+    open: 0,
     lifts: names.map((name) => {
       const count = Math.max(lastLiftSets(name).length, 3);
       return { name, sets: Array.from({ length: count }, blankSet) };
@@ -822,6 +910,32 @@ function elapsedMinutes() {
   return Math.max(0, Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 60000));
 }
 
+function liftComplete(lift) {
+  return lift.sets.length > 0 && lift.sets.every(setDone);
+}
+
+/* The first exercise that still has sets to do, or -1 when everything is done. */
+function firstOpenLift(workout, after = -1) {
+  const lifts = workout?.lifts || [];
+  for (let i = after + 1; i < lifts.length; i += 1) if (!liftComplete(lifts[i])) return i;
+  for (let i = 0; i <= after && i < lifts.length; i += 1) if (!liftComplete(lifts[i])) return i;
+  return -1;
+}
+
+/* When the open exercise is finished, fold it up and open the next one. */
+function advanceIfComplete(liftIndex) {
+  const lift = active?.lifts[liftIndex];
+  if (!lift || active.open !== liftIndex || !liftComplete(lift)) return false;
+  active.open = firstOpenLift(active, liftIndex);
+  return true;
+}
+
+let pendingAdvance = 0;
+
+function setCountText(total) {
+  return `${total} ${total === 1 ? "set" : "sets"} logged`;
+}
+
 function setDone(set) {
   return String(set.reps).trim() !== "";
 }
@@ -842,10 +956,21 @@ function renderStartPicker() {
 }
 
 function renderActive() {
-  const total = active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0);
   const lifts = active.lifts.map((lift, liftIndex) => {
     const prev = lastLiftSets(lift.name);
-    const prevText = prev.length ? `Last: ${prev.map(setText).join(", ")}` : "No history yet";
+    const doneSets = lift.sets.filter(setDone);
+    const complete = liftComplete(lift);
+    if (active.open !== liftIndex) {
+      const status = complete ? ICONS.check : `${doneSets.length}/${lift.sets.length}`;
+      const summary = doneSets.length
+        ? doneSets.map(setText).join("  ")
+        : (prev.length ? `Last: ${prev.map(setText).join(", ")}` : "Not started");
+      return `<button class="w-row${complete ? " complete" : doneSets.length ? " partial" : ""}" type="button" data-action="w-open" data-lift="${liftIndex}" aria-expanded="false">
+        <span class="w-status" aria-hidden="true">${status}</span>
+        <span class="w-row-text"><span class="w-row-name">${esc(lift.name || "Unnamed exercise")}</span><span class="w-row-sets">${esc(summary)}</span></span>
+        <span class="w-chev" aria-hidden="true">›</span>
+      </button>`;
+    }
     const rows = lift.sets.map((set, setIndex) => {
       const hint = suggestion(liftIndex, setIndex);
       const done = setDone(set);
@@ -856,33 +981,28 @@ function renderActive() {
         <button class="w-check" type="button" data-action="w-fill" data-lift="${liftIndex}" data-set="${setIndex}" aria-label="${done ? "Clear" : "Same as hint for"} set ${setIndex + 1}" aria-pressed="${done}">${ICONS.check}</button>
       </div>`;
     }).join("");
-    return `<section class="w-lift">
+    return `<section class="w-lift" aria-expanded="true">
       <div class="w-lift-head">
         <input class="w-name" data-lift="${liftIndex}" type="text" maxlength="40" list="lift-names" placeholder="Exercise name" aria-label="Exercise name" value="${esc(lift.name)}">
-        <button class="icon-x" type="button" data-action="w-remove-lift" data-lift="${liftIndex}" aria-label="Remove ${esc(lift.name || "exercise")}">×</button>
+        <button class="icon-x w-fold" type="button" data-action="w-open" data-lift="${liftIndex}" aria-label="Fold up ${esc(lift.name || "exercise")}">⌃</button>
       </div>
-      <p class="fine w-prev">${esc(prevText)}</p>
-      <div class="w-head"><span></span><span>${esc(active.unit)}</span><span>Reps</span><span></span></div>
+      <div class="w-head"><span></span><span>${esc(active.unit)}</span><span>Reps</span><span class="w-head-note">${prev.length ? "Gray = last time" : ""}</span></div>
       ${rows}
       <div class="w-set-actions">
         <button class="btn ghost" type="button" data-action="w-add-set" data-lift="${liftIndex}">+ Set</button>
         ${lift.sets.length > 1 ? `<button class="btn ghost" type="button" data-action="w-remove-set" data-lift="${liftIndex}">− Set</button>` : ""}
+        <button class="btn ghost" type="button" data-action="w-remove-lift" data-lift="${liftIndex}" aria-label="Remove ${esc(lift.name || "exercise")}">Remove</button>
       </div>
     </section>`;
   }).join("");
+  const allDone = active.lifts.length > 0 && active.lifts.every(liftComplete);
   const inSession = new Set(active.lifts.map((lift) => lift.name.trim().toLowerCase()));
   const ideas = GYM_DAYS[active.day].filter((name) => !inSession.has(name.toLowerCase()))
     .map((name) => `<button class="pick idea" type="button" data-action="w-add-lift" data-name="${esc(name)}">+ ${esc(name)}</button>`).join("");
   const options = knownLiftNames().map((name) => `<option value="${esc(name)}"></option>`).join("");
-  return `<section class="w-top">
-      <div>
-        <p class="kicker">${esc(active.day)} · started ${esc(clockText(active.start))}</p>
-        <p class="hero-stat"><span data-elapsed>${esc(durationText(elapsedMinutes()))}</span></p>
-        <p class="fine"><span data-set-count>${total}</span> ${total === 1 ? "set" : "sets"} logged · type reps, or tap ✓ to repeat last time</p>
-      </div>
-    </section>
-    <datalist id="lift-names">${options}</datalist>
+  return `<datalist id="lift-names">${options}</datalist>
     <div class="w-list">${lifts}</div>
+    ${allDone ? `<div class="w-all-done"><p>All exercises done.</p><button class="btn full" type="button" data-action="w-open-finish">Finish workout</button></div>` : ""}
     <div class="day-picks" style="margin-top:12px">${ideas}<button class="pick" type="button" data-action="w-add-lift" data-name="">+ Other exercise</button></div>
     <div style="margin-top:22px">
       ${ui.confirmDiscard
@@ -898,6 +1018,7 @@ function finishSheet() {
     <section class="sheet" data-action="hold" role="dialog" aria-label="Finish workout">
       <div class="sheet-grab"></div>
       <h2 class="block-title">Finish ${esc(active.day)}</h2>
+      <p class="fine" style="margin:0 0 12px">${esc(setCountText(active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0)))} across ${active.lifts.filter((lift) => lift.sets.some(setDone)).length} exercises</p>
       <form id="finish-form" class="stack" autocomplete="off">
         <div class="time-pair">
           <label class="field"><span>Started</span><input type="time" name="start" value="${esc(active.start)}" required></label>
@@ -972,7 +1093,7 @@ function onWorkoutInput(target) {
   row.classList.toggle("done", done);
   row.querySelector(".w-check")?.setAttribute("aria-pressed", String(done));
   const counter = document.querySelector("[data-set-count]");
-  if (counter) counter.textContent = String(active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0));
+  if (counter) counter.textContent = setCountText(active.lifts.reduce((sum, lift) => sum + lift.sets.filter(setDone).length, 0));
   saveActive();
 }
 
@@ -981,6 +1102,8 @@ function onWorkoutAction(action, button) {
   const lift = active?.lifts[liftIndex];
   if (action === "w-start") return startWorkout(button.dataset.day);
   if (!active) return;
+  clearTimeout(pendingAdvance);
+  if (action === "w-open") active.open = active.open === liftIndex ? -1 : liftIndex;
   if (action === "w-fill" && lift) {
     const setIndex = Number(button.dataset.set);
     const set = lift.sets[setIndex];
@@ -995,15 +1118,31 @@ function onWorkoutAction(action, button) {
       }
       set.weight = set.weight || hint.weight;
       set.reps = hint.reps;
+      if (liftComplete(lift) && active.open === liftIndex) {
+        // Show the tick for a moment, then fold the exercise and open the next.
+        saveActive();
+        render({ keepDraft: false });
+        pendingAdvance = setTimeout(() => {
+          if (advanceIfComplete(liftIndex)) {
+            saveActive();
+            render({ keepDraft: false });
+          }
+        }, 450);
+        return;
+      }
     }
   }
   if (action === "w-add-set" && lift) lift.sets.push(blankSet());
   if (action === "w-remove-set" && lift && lift.sets.length > 1) lift.sets.pop();
-  if (action === "w-remove-lift" && lift) active.lifts.splice(liftIndex, 1);
+  if (action === "w-remove-lift" && lift) {
+    active.lifts.splice(liftIndex, 1);
+    active.open = firstOpenLift(active);
+  }
   if (action === "w-add-lift") {
     const name = button.dataset.name || "";
     const count = Math.max(lastLiftSets(name).length, 3);
     active.lifts.push({ name, sets: Array.from({ length: count }, blankSet) });
+    active.open = active.lifts.length - 1;
   }
   if (action === "w-ask-discard") ui.confirmDiscard = true;
   if (action === "w-keep") ui.confirmDiscard = false;
@@ -1484,6 +1623,9 @@ async function shareSite() {
 
 let captureEnabled = true;
 
+/* Set by a Home button that should land on an area with its log sheet open. */
+let openLogOnArrival = "";
+
 const renderBase = render;
 render = function patchedRender(options = {}) {
   const keep = options.keepDraft !== false;
@@ -1547,6 +1689,14 @@ document.addEventListener("click", (event) => {
     ui.gymSession = session;
     ui.keepGym = true;
     render({ keepDraft: true });
+  }
+  if (action === "home-start") {
+    startWorkout(button.dataset.day);
+    if (active) location.hash = "#/area/gym";
+  }
+  if (action === "home-log" && areaById(areaId)) {
+    openLogOnArrival = areaId;
+    location.hash = `#/area/${areaId}`;
   }
   if (action === "toggle-today") toggleToday(areaId);
   if (action === "share") shareSite();
@@ -1715,6 +1865,20 @@ document.addEventListener("input", (event) => {
 
 document.addEventListener("change", (event) => {
   if (event.target.id === "photo-input") onPhoto(event.target);
+  // Typing the last set's reps folds the exercise once the field is left.
+  // Wait a beat so a tap that caused the blur still lands on its button.
+  const row = event.target.closest?.("[data-w-row]");
+  if (row && active && event.target.dataset.field === "reps") {
+    const liftIndex = Number(row.dataset.lift);
+    clearTimeout(pendingAdvance);
+    pendingAdvance = setTimeout(() => {
+      if (document.activeElement?.closest?.(`[data-w-row][data-lift="${liftIndex}"]`)) return;
+      if (advanceIfComplete(liftIndex)) {
+        saveActive();
+        render({ keepDraft: false });
+      }
+    }, 350);
+  }
 });
 
 window.addEventListener("hashchange", () => {
@@ -1730,6 +1894,8 @@ window.addEventListener("hashchange", () => {
   ui.gymSession = null;
   ui.finishOpen = false;
   ui.confirmDiscard = false;
+  if (openLogOnArrival && route().area?.id === openLogOnArrival) ui.logOpen = true;
+  openLogOnArrival = "";
   render({ keepDraft: false });
 });
 
