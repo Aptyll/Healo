@@ -1,0 +1,166 @@
+/* Sleep, Budget and Running pages (goals.js). Colors come from the shared theme
+   variables in styles.css, so a theme change carries over without edits here. */
+
+.gl .hero-stat.gl-over { color: var(--danger); }
+
+.gl-result {
+  margin: 2px 0;
+  font-size: 1.15rem;
+  color: var(--muted);
+}
+
+.gl-result strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.gl-inline {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.gl-tips {
+  margin: 8px 0 0;
+  padding-left: 1.3em;
+  display: grid;
+  gap: 8px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.gl-center { text-align: center; }
+
+/* Sleep: one bar per night, with a line at the target. */
+.gl-chart {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin: 12px 0 10px;
+}
+
+.gl-day {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.gl-day-val { min-height: 1.1em; font-weight: 650; color: var(--text); }
+
+.gl-col {
+  position: relative;
+  width: 100%;
+  height: 96px;
+  border-radius: 10px;
+  background: var(--card-2);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.gl-col::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--gl-line);
+  border-top: 2px dashed color-mix(in srgb, var(--text) 45%, transparent);
+}
+
+.gl-col i {
+  display: block;
+  width: 100%;
+  border-radius: 10px 10px 0 0;
+  background: color-mix(in srgb, var(--area) 45%, var(--card-2));
+}
+
+.gl-col i.hit { background: var(--area); }
+
+.gl-day.today .gl-day-name { color: var(--text); font-weight: 700; }
+
+/* Budget: spending by category. */
+.gl-cat {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.gl-cat .bar { grid-column: 1 / -1; }
+
+/* Running: the plan, one row per week. */
+.gl-plan { display: grid; margin-top: 8px; }
+
+.gl-week {
+  display: grid;
+  grid-template-columns: 4.4em 1fr auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 46px;
+  padding: 6px 10px;
+  margin: 0 -10px;
+  border-radius: 12px;
+}
+
+.gl-week.current { background: color-mix(in srgb, var(--area) 14%, transparent); }
+
+.gl-week-name { font-weight: 650; }
+
+.gl-dots { display: flex; gap: 6px; }
+
+.gl-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  display: grid;
+  place-items: center;
+}
+
+.gl-dot svg { width: 14px; height: 14px; }
+
+.gl-dot.done {
+  background: var(--area);
+  border-color: transparent;
+  color: var(--ink);
+}
+
+.gl-dot.next { border-color: var(--area); }
+
+/* Running: the timer. */
+.gl-live {
+  margin: 8px 0 14px;
+  padding: 28px 16px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  text-align: center;
+}
+
+.gl-live[data-kind="Jog"] {
+  background: color-mix(in srgb, var(--area) 22%, var(--card));
+  border-color: color-mix(in srgb, var(--area) 60%, transparent);
+}
+
+.gl-live p { margin: 0; }
+
+.gl-phase {
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.gl-count {
+  font-size: 4.6rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.gl-live .fine { margin-top: 6px; }
